@@ -12,7 +12,13 @@ interface ExistingUser {
   flag: string;
 }
 
-export function AuthForm({ existing }: { existing: ExistingUser[] }) {
+export function AuthForm({
+  existing,
+  joinCode,
+}: {
+  existing: ExistingUser[];
+  joinCode?: string;
+}) {
   const [mode, setMode] = useState<"login" | "signup">(existing.length ? "login" : "signup");
   const [name, setName] = useState("");
   const [secret, setSecret] = useState("");
@@ -28,8 +34,8 @@ export function AuthForm({ existing }: { existing: ExistingUser[] }) {
     start(async () => {
       const res =
         mode === "login"
-          ? await logIn({ name, secret, remember })
-          : await signUp({ name, secret, flag, theme, remember });
+          ? await logIn({ name, secret, remember, joinCode })
+          : await signUp({ name, secret, flag, theme, remember, joinCode });
       // On success the action redirects; only errors return here.
       if (res && !res.ok) setError(res.error);
     });

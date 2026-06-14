@@ -5,14 +5,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE, LEAGUE_COOKIE, getSessionUserId } from "@/lib/session";
 import {
+  getUser,
   getUserByName,
   getCredential,
   setCredential,
+  clearCredential,
   ensureUser,
   savePrediction,
   updateUser,
   getUserPrediction,
 } from "@/lib/data";
+import { isAdmin } from "@/lib/constants";
 import {
   hashSecret,
   verifySecret,
@@ -38,6 +41,21 @@ async function setSessionCookie(userId: string, remember: boolean) {
   });
 }
 
+/** Optionally join a league via invite code straight after authenticating. */
+async function maybeJoin(userId: string, joinCode?: string) {
+  if (!joinCode) return;
+  const res = await joinLeague(joinCode, userId);
+  if (res.ok && res.league) {
+    const store = await cookies();
+    store.set(LEAGUE_COOKIE, res.league.id, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: ONE_YEAR,
+    });
+  }
+}
+
 // --- auth: name + PIN/password -------------------------------------------
 
 export async function signUp(input: {
@@ -46,6 +64,7 @@ export async function signUp(input: {
   flag?: string;
   theme?: string;
   remember?: boolean;
+  joinCode?: string;
 }) {
   const name = input.name.trim();
   if (name.length < 2) return { ok: false as const, error: "Pick a name (2+ characters)." };
@@ -63,10 +82,16 @@ export async function signUp(input: {
   });
   await setCredential(id, hashSecret(input.secret));
   await setSessionCookie(id, input.remember ?? true);
+  await maybeJoin(id, input.joinCode);
   redirect("/dashboard");
 }
 
-export async function logIn(input: { name: string; secret: string; remember?: boolean }) {
+export async function logIn(input: {
+  name: string;
+  secret: string;
+  remember?: boolean;
+  joinCode?: string;
+}) {
   const user = await getUserByName(input.name.trim());
   if (!user) return { ok: false as const, error: "No account with that name. Sign up?" };
 
@@ -81,6 +106,7 @@ export async function logIn(input: { name: string; secret: string; remember?: bo
   }
 
   await setSessionCookie(user.id, input.remember ?? true);
+  await maybeJoin(user.id, input.joinCode);
   redirect("/dashboard");
 }
 
@@ -97,6 +123,29 @@ export async function changePin(newSecret: string) {
     return { ok: false as const, error: `PIN/password must be at least ${MIN_SECRET_LENGTH} characters.` };
   await setCredential(userId, hashSecret(newSecret));
   return { ok: true as const };
+}
+
+/**
+ * Admin-only: reset another player's PIN. If `newSecret` is given, sets it;
+ * otherwise clears it so the friend picks a fresh PIN on their next login.
+ */
+export async function adminResetPin(input: { userId: string; newSecret?: string }) {
+  const requesterId = await getSessionUserId();
+  if (!requesterId) return { ok: false as const, error: "Not signed in" };
+  if (!isAdmin(requesterId)) return { ok: false as const, error: "Admins only." };
+
+  const target = await getUser(input.userId);
+  if (!target) return { ok: false as const, error: "User not found." };
+
+  const secret = input.newSecret?.trim();
+  if (secret) {
+    if (secret.length < MIN_SECRET_LENGTH)
+      return { ok: false as const, error: `PIN/password must be at least ${MIN_SECRET_LENGTH} characters.` };
+    await setCredential(input.userId, hashSecret(secret));
+    return { ok: true as const, mode: "set" as const, name: target.name };
+  }
+  await clearCredential(input.userId);
+  return { ok: true as const, mode: "cleared" as const, name: target.name };
 }
 
 // --- profile --------------------------------------------------------------

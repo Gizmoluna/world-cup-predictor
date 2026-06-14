@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, Copy, Crown } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { InviteShare } from "./invite-share";
 import { createLeagueAction, joinLeagueAction, setActiveLeague } from "@/app/actions";
 import { cn } from "@/lib/utils";
 
@@ -83,6 +84,7 @@ export function LeaguesPanel({ leagues }: { leagues: LeagueRow[] }) {
                 </Button>
               )}
             </div>
+            <InviteShare leagueName={l.name} code={l.inviteCode} />
           </div>
         ))}
       </section>

@@ -125,6 +125,16 @@ export async function setCredential(userId: string, hash: string): Promise<void>
   await sb.from("users").update({ pin_hash: hash }).eq("id", userId);
 }
 
+/** Clear a user's credential so they re-claim it (set a fresh PIN) on next login. */
+export async function clearCredential(userId: string): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    demoCreds.delete(userId);
+    return;
+  }
+  const sb = createServiceClient();
+  await sb.from("users").update({ pin_hash: null }).eq("id", userId);
+}
+
 /** Create-or-update a user profile (auth bootstrap + new friends). */
 export async function ensureUser(user: AppUser): Promise<AppUser> {
   if (!isSupabaseConfigured()) {

@@ -1,9 +1,13 @@
 import { requireUser } from "@/lib/session";
 import { getReadModel } from "@/lib/aggregate";
+import { getUsers } from "@/lib/data";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AdminPanel } from "@/components/admin-panel";
+import { AdminResetPin } from "@/components/admin-reset-pin";
+import { isAdmin } from "@/lib/constants";
+import { chrome } from "@/lib/display";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +19,10 @@ const STATUS_TONE: Record<string, "default" | "live" | "win" | "warning"> = {
 };
 
 export default async function AdminPage() {
-  await requireUser();
-  const model = await getReadModel();
+  const user = await requireUser();
+  const [model, users] = await Promise.all([getReadModel(), getUsers()]);
+  const admin = isAdmin(user.id);
+  const userList = users.map((u) => ({ id: u.id, name: u.name, flag: chrome(u).flag }));
 
   const scoredCount = model.scoredMatches.length;
 
@@ -66,6 +72,14 @@ export default async function AdminPage() {
             <span className="text-xl font-black">{scoredCount}</span>
           </div>
         </div>
+
+        {/* Reset a friend's PIN (admins only) */}
+        {admin && (
+          <Card className="flex flex-col gap-3">
+            <CardTitle>Reset a friend&apos;s PIN</CardTitle>
+            <AdminResetPin users={userList} />
+          </Card>
+        )}
 
         {/* Sync + export */}
         <Card className="flex flex-col gap-3">

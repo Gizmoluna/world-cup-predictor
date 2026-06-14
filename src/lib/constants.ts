@@ -84,6 +84,17 @@ export const FLAG_OPTIONS = [
   "🇲🇦", "🇭🇷", "🇧🇪", "🇺🇾", "⚽", "🔥",
 ];
 
+// Admins (can reset friends' PINs, etc.). Override with ADMIN_USER_IDS env
+// (comma-separated). Defaults to the two owners.
+export const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS ?? "carina,johnny")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+export function isAdmin(id?: string | null): boolean {
+  return !!id && ADMIN_USER_IDS.includes(id);
+}
+
 export const APP_NAME = "World Cup Predictor";
 export const APP_SHORT = "Predictor";
 export const APP_TAGLINE = "Predict every match";
