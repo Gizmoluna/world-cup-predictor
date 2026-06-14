@@ -77,6 +77,7 @@ export const NAV_ITEMS = [
   { href: "/news", label: "News", icon: "Newspaper" },
 ] as const;
 
-export const APP_NAME = "Carina vs Johnny";
-export const APP_TAGLINE = "World Cup Clash";
+export const APP_NAME = "World Cup Predictor";
+export const APP_SHORT = "Predictor";
+export const APP_TAGLINE = "Predict every match";
 export const APP_SUBTITLE = "Every match. Every prediction. Glory forever.";

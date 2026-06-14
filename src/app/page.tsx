@@ -43,7 +43,7 @@ export default async function LandingPage() {
         </div>
 
         <p className="mt-8 text-xs text-muted">
-          Carina vs Johnny · Lock in before kickoff · No takebacks
+          Lock in before kickoff · No takebacks
         </p>
       </div>
     </div>

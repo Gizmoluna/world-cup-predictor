@@ -19,8 +19,10 @@ import type {
   Player,
   Standing,
   Team,
+  WorldCupFact,
 } from "@/lib/types";
 import type { FootballProvider } from "./provider";
+import { FACTS_BANK } from "./facts-bank";
 
 const BASE = "https://v3.football.api-sports.io";
 
@@ -143,6 +145,11 @@ export class ApiFootballProvider implements FootballProvider {
   async getNews(): Promise<NewsItem[]> {
     // API-Football has no news endpoint; news comes from a separate provider.
     return [];
+  }
+
+  async getFacts(): Promise<WorldCupFact[]> {
+    // No vendor facts endpoint — serve the curated bank; live facts are derived.
+    return FACTS_BANK;
   }
 }
 

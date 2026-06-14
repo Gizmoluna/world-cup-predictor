@@ -1,10 +1,11 @@
-# Carina vs Johnny: World Cup Clash ⚽🏆
+# World Cup Predictor ⚽🏆
 
-> Carina vs Johnny. Every match. Every prediction. Glory forever.
+> Every match. Every prediction. Glory forever.
 
-A mobile-first PWA where **Carina** 🇨🇴 and **Johnny** 🇮🇪 predict World Cup matches —
-scorelines, goal scorers, cards, bonuses — and the app auto-scores every prediction
-and tracks the head-to-head rivalry.
+A mobile-first PWA for predicting World Cup matches — scorelines, goal scorers,
+cards, bonuses — that auto-scores every prediction and ranks you against friends in
+private leagues. The original rivalry, **Carina** 🇨🇴 vs **Johnny** 🇮🇪, ships as the
+default "Carina vs Johnny" league.
 
 ## Quick start
 
@@ -77,8 +78,16 @@ thumb-friendly controls. Tested layout target: iPhone Safari + Samsung Chrome.
 ## Pages
 
 `/` login · `/dashboard` · `/matches` · `/matches/[id]` (predict / locked view) ·
-`/battle` · `/leaderboard` · `/profile/[id]` · `/news` · `/stats` · `/settings` ·
-`/admin` (manual sync / score / CSV export).
+`/battle` · `/leaderboard` · `/leagues` · `/facts` · `/profile/[id]` · `/news` ·
+`/stats` · `/settings` · `/admin` (manual sync / score / CSV export).
+
+## Facts feed
+
+`/facts` mixes a large curated World Cup fact bank (`src/lib/football-api/facts-bank.ts`,
+served via the swappable provider) with **live facts derived from current data**
+(`src/lib/facts.ts`) — top scorers, group leaders, biggest wins, league rivalry
+stats — which refresh automatically as fixtures/results sync. The feed auto-refreshes
+and there's a rotating "Did you know?" ticker on the dashboard.
 
 ## Adding more players / leagues
 

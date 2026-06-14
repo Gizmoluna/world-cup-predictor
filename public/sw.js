@@ -1,4 +1,4 @@
-// Minimal offline-shell service worker for Carina vs Johnny: World Cup Clash.
+// Minimal offline-shell service worker for World Cup Predictor.
 const CACHE = "cvj-shell-v1";
 const SHELL = ["/", "/dashboard", "/manifest.webmanifest", "/icon.svg"];
 

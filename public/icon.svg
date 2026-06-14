@@ -4,15 +4,21 @@
       <stop offset="0" stop-color="#0d1424"/>
       <stop offset="1" stop-color="#060912"/>
     </linearGradient>
-    <linearGradient id="t" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#ffe27a"/>
       <stop offset="1" stop-color="#d4a017"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#1fd65f" stroke-opacity="0.25" stroke-width="6"/>
-  <text x="50%" y="44%" text-anchor="middle" font-family="Arial, sans-serif" font-size="120" font-weight="900" fill="#fcd116">C</text>
-  <text x="50%" y="44%" text-anchor="middle" font-family="Arial, sans-serif" font-size="120" font-weight="900" fill="#2ecc71" opacity="0.0">C</text>
-  <text x="50%" y="72%" text-anchor="middle" font-family="Arial, sans-serif" font-size="56" font-weight="900" fill="#2ecc71">vs J</text>
-  <path d="M196 150 l60 -40 60 40 v60 a60 60 0 0 1 -120 0 z" fill="url(#t)" opacity="0.0"/>
+  <circle cx="256" cy="232" r="150" fill="none" stroke="#1fd65f" stroke-opacity="0.18" stroke-width="6"/>
+  <!-- trophy -->
+  <path d="M176 120 h160 v36 a80 80 0 0 1 -160 0 z" fill="url(#gold)"/>
+  <path d="M176 132 h-34 a34 34 0 0 0 34 48 z" fill="url(#gold)"/>
+  <path d="M336 132 h34 a34 34 0 0 1 -34 48 z" fill="url(#gold)"/>
+  <rect x="240" y="216" width="32" height="46" fill="url(#gold)"/>
+  <rect x="196" y="262" width="120" height="22" rx="8" fill="url(#gold)"/>
+  <!-- ball -->
+  <circle cx="256" cy="356" r="58" fill="#eaf0ff"/>
+  <path d="M256 320 l20 15 -8 24 h-24 l-8 -24 z" fill="#0d1424"/>
+  <circle cx="256" cy="356" r="58" fill="none" stroke="#1fd65f" stroke-width="4" stroke-opacity="0.5"/>
 </svg>

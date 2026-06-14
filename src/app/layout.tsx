@@ -1,20 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { APP_NAME, APP_SUBTITLE, APP_TAGLINE } from "@/lib/constants";
+import { APP_NAME, APP_SHORT, APP_SUBTITLE, APP_TAGLINE } from "@/lib/constants";
 import { ServiceWorker } from "@/components/service-worker";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: `${APP_NAME}: ${APP_TAGLINE}`,
+  title: `${APP_NAME} — ${APP_TAGLINE}`,
   description: APP_SUBTITLE,
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: APP_TAGLINE,
+    title: APP_SHORT,
   },
   icons: {
     icon: "/icon.svg",

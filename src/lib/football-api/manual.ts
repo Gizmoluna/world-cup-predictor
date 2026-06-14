@@ -8,6 +8,7 @@ import type {
   Player,
   Standing,
   Team,
+  WorldCupFact,
 } from "@/lib/types";
 import type { FootballProvider } from "./provider";
 import {
@@ -18,6 +19,7 @@ import {
   buildSeedMatches,
   buildSeedStandings,
 } from "./seed-data";
+import { FACTS_BANK } from "./facts-bank";
 
 export class ManualProvider implements FootballProvider {
   readonly name = "manual";
@@ -48,5 +50,9 @@ export class ManualProvider implements FootballProvider {
 
   async getNews(): Promise<NewsItem[]> {
     return SEED_NEWS;
+  }
+
+  async getFacts(): Promise<WorldCupFact[]> {
+    return FACTS_BANK;
   }
 }

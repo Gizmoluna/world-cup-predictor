@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Carina vs Johnny: World Cup Clash — shared domain types
+// World Cup Predictor — shared domain types
 // ---------------------------------------------------------------------------
 // These types are the contract between the football-API providers, the scoring
 // engine, the Supabase data layer and the UI. Keep them provider-agnostic.
@@ -224,6 +224,25 @@ export interface NewsItem {
   publishedAt: string;
   teamIds?: string[];
   category: "general" | "injury" | "lineup" | "preview" | "report" | "rumour";
+}
+
+export type FactCategory =
+  | "live"
+  | "record"
+  | "history"
+  | "player"
+  | "host2026"
+  | "stat"
+  | "rivalry"
+  | "trivia";
+
+export interface WorldCupFact {
+  id: string;
+  text: string;
+  category: FactCategory;
+  source: string;
+  /** true = derived from current tournament data, refreshes as results come in. */
+  live?: boolean;
 }
 
 export interface Standing {

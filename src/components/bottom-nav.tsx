@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, CalendarDays, Swords, Trophy, Newspaper } from "lucide-react";
+import { Home, CalendarDays, Swords, Trophy, Newspaper, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
@@ -10,6 +10,7 @@ const ITEMS = [
   { href: "/matches", label: "Matches", Icon: CalendarDays },
   { href: "/battle", label: "Battle", Icon: Swords },
   { href: "/leaderboard", label: "Table", Icon: Trophy },
+  { href: "/facts", label: "Facts", Icon: Lightbulb },
   { href: "/news", label: "News", Icon: Newspaper },
 ];
 

@@ -1,7 +1,7 @@
 {
-  "name": "Carina vs Johnny: World Cup Clash",
-  "short_name": "Clash",
-  "description": "Karina vs Johnny. Every match. Every prediction. Glory forever.",
+  "name": "World Cup Predictor",
+  "short_name": "Predictor",
+  "description": "Predict every World Cup match and battle your friends in private leagues.",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",

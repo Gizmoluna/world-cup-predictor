@@ -7,7 +7,9 @@ import { getProvider } from "@/lib/football-api/provider";
 import { AppShell } from "@/components/app-shell";
 import { ScoreBattle } from "@/components/score-battle";
 import { MatchCard, type Predictor } from "@/components/match-card";
+import { FactTicker } from "@/components/fact-ticker";
 import { Card, CardTitle } from "@/components/ui/card";
+import { computeDerivedFacts } from "@/lib/facts";
 import { isSameMelbourneDay } from "@/lib/time";
 import { chrome } from "@/lib/display";
 
@@ -20,7 +22,9 @@ export default async function DashboardPage() {
   const memberIds = members.map((m) => m.id);
 
   const model = await getReadModel({ restrictUserIds: memberIds });
-  const news = await getProvider().getNews();
+  const provider = getProvider();
+  const [news, bankFacts] = await Promise.all([provider.getNews(), provider.getFacts()]);
+  const tickerFacts = [...computeDerivedFacts(model), ...bankFacts].slice(0, 40);
 
   const predictors = (matchId: string): Predictor[] =>
     members.map((m) => ({
@@ -59,6 +63,8 @@ export default async function DashboardPage() {
         </div>
 
         <ScoreBattle rows={model.leaderboard} />
+
+        <FactTicker facts={tickerFacts} />
 
         {me && (me.currentStreak >= 2 || me.currentStreak <= -2) && (
           <Card className="flex items-center gap-3">

@@ -5,7 +5,6 @@ import { getUserLeagues } from "@/lib/leagues";
 import { ThemeApplier } from "./theme-applier";
 import { BottomNav } from "./bottom-nav";
 import { LeagueSwitcher } from "./league-switcher";
-import { APP_NAME } from "@/lib/constants";
 import { chrome } from "@/lib/display";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
@@ -24,8 +23,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/dashboard" className="flex items-center gap-2">
             <span className="text-xl">⚽</span>
             <span className="text-sm font-extrabold tracking-tight">
-              {APP_NAME}
-              <span className="text-[var(--accent)]"> · Clash</span>
+              World Cup <span className="text-[var(--accent)]">Predictor</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
