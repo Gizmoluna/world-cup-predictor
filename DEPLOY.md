@@ -21,12 +21,12 @@ There are 3 things only you can do (they need your logins). ~15 minutes.
    - `anon` `public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `service_role` key (secret) → `SUPABASE_SERVICE_ROLE_KEY`
 
-## 2. API-Football (live fixtures) — ~3 min
+## 2. Live match data — no key needed ✅
 
-1. Sign up at https://www.api-sports.io/ (or via RapidAPI). Free tier ≈ 100
-   requests/day; the app caches for 60s.
-2. Copy your API key → `API_FOOTBALL_KEY`.
-   *(If you skip this, the app just uses the built-in sample fixtures until you add it.)*
+Set `FOOTBALL_PROVIDER=espn` (in step 3). This uses ESPN's free public feed for
+real World Cup fixtures, scores, results, goal scorers and cards — **no signup,
+no API key**. (Optional: for more complete player stats you can later switch to
+`api-football` with a free api-sports.io key, but `espn` is plenty.)
 
 ## 3. Vercel (hosting) — ~5 min
 
@@ -38,10 +38,7 @@ There are 3 things only you can do (they need your logins). ~15 minutes.
    ```
    SESSION_SECRET=37132159eed5834158db8dd36c26d91c1aaa579a5f978d059ec2a8d8036f3879
    CRON_SECRET=915218972c977c15ff29994ee6b2fd8a87cd6462d28d56f6
-   FOOTBALL_PROVIDER=api-football
-   API_FOOTBALL_KEY=<from step 2>
-   API_FOOTBALL_LEAGUE=1
-   API_FOOTBALL_SEASON=2026
+   FOOTBALL_PROVIDER=espn
    NEXT_PUBLIC_SUPABASE_URL=<from step 1>
    NEXT_PUBLIC_SUPABASE_ANON_KEY=<from step 1>
    SUPABASE_SERVICE_ROLE_KEY=<from step 1>

@@ -60,7 +60,10 @@ export default async function MatchPage({
   const sm = model.scoredMatches.find((s) => s.match.id === id);
   const iWon = finished && sm?.winnerUserId === user.id;
 
-  const playerById = mapToObj(model.playerById);
+  const playerById = {
+    ...mapToObj(model.playerById),
+    ...Object.fromEntries([...homePlayers, ...awayPlayers].map((p) => [p.id, p])),
+  };
   const memberById = new Map<string, AppUser>(members.map((m) => [m.id, m]));
   const otherPredicted = preds.filter((p) => p.userId !== user.id).length;
 

@@ -34,6 +34,7 @@ export interface FootballProvider {
 
 export type ProviderName =
   | "manual"
+  | "espn"
   | "api-football"
   | "sportmonks"
   | "statorium"
@@ -41,6 +42,7 @@ export type ProviderName =
 
 import { ManualProvider } from "./manual";
 import { ApiFootballProvider } from "./api-football";
+import { EspnProvider } from "./espn";
 
 let cached: FootballProvider | null = null;
 
@@ -48,6 +50,10 @@ export function getProvider(): FootballProvider {
   if (cached) return cached;
   const name = (process.env.FOOTBALL_PROVIDER ?? "manual") as ProviderName;
   switch (name) {
+    case "espn":
+      // Free, no key — real live World Cup data.
+      cached = new EspnProvider();
+      break;
     case "api-football":
       // Falls back to manual seed data if no key is configured.
       cached = process.env.API_FOOTBALL_KEY
