@@ -4,6 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardTitle } from "@/components/ui/card";
 import { SettingsForm } from "@/components/settings-form";
 import { SignOutButton } from "@/components/sign-out-button";
+import { ChangePin } from "@/components/change-pin";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ export default async function SettingsPage() {
 
         <Card className="flex flex-col gap-3">
           <CardTitle>Account</CardTitle>
+          <ChangePin />
           <SignOutButton />
         </Card>
       </div>

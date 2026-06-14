@@ -62,6 +62,15 @@ export default async function DashboardPage() {
           </p>
         </div>
 
+        {!league && (
+          <Link href="/leagues" className="glass block p-4 ring-1 ring-[var(--accent)]/50 transition active:scale-[0.99]">
+            <p className="text-sm font-bold">You&apos;re not in a league yet 🏆</p>
+            <p className="mt-1 text-xs text-muted">
+              Create a league and share the code, or join your friends with their code. <span className="text-[var(--accent)]">Go to Leagues →</span>
+            </p>
+          </Link>
+        )}
+
         <ScoreBattle rows={model.leaderboard} />
 
         <FactTicker facts={tickerFacts} />

@@ -77,6 +77,13 @@ export const NAV_ITEMS = [
   { href: "/news", label: "News", icon: "Newspaper" },
 ] as const;
 
+// Flag choices for new friends signing up.
+export const FLAG_OPTIONS = [
+  "🇨🇴", "🍀", "🇮🇪", "🇦🇺", "🇦🇷", "🇧🇷", "🇫🇷", "🇪🇸",
+  "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "🇩🇪", "🇵🇹", "🇮🇹", "🇳🇱", "🇲🇽", "🇺🇸", "🇯🇵",
+  "🇲🇦", "🇭🇷", "🇧🇪", "🇺🇾", "⚽", "🔥",
+];
+
 export const APP_NAME = "World Cup Predictor";
 export const APP_SHORT = "Predictor";
 export const APP_TAGLINE = "Predict every match";

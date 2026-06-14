@@ -37,6 +37,9 @@ const demoUsers = new Map<string, AppUser>(
   ]),
 );
 
+// Credential store for demo mode (Supabase uses users.pin_hash). userId -> hash.
+const demoCreds = new Map<string, string>();
+
 // Pre-seeded predictions for finished matches so the leaderboard/battle are
 // alive on first load. Keyed by `${userId}:${matchId}`.
 const demoPredictions = new Map<string, Prediction>();
@@ -91,6 +94,35 @@ export async function updateUser(id: string, patch: Partial<AppUser>): Promise<A
   const sb = createServiceClient();
   const { data } = await sb.from("users").update(userToRow(patch)).eq("id", id).select().maybeSingle();
   return data ? rowToUser(data) : null;
+}
+
+/** Find a user by display name (case-insensitive). */
+export async function getUserByName(name: string): Promise<AppUser | null> {
+  const norm = name.trim().toLowerCase();
+  if (!norm) return null;
+  if (!isSupabaseConfigured()) {
+    return [...demoUsers.values()].find((u) => u.name.toLowerCase() === norm) ?? null;
+  }
+  const sb = createServiceClient();
+  const { data } = await sb.from("users").select("*").ilike("name", norm).maybeSingle();
+  return data ? rowToUser(data) : null;
+}
+
+/** Read a user's stored credential hash (pin/password), or null if unclaimed. */
+export async function getCredential(userId: string): Promise<string | null> {
+  if (!isSupabaseConfigured()) return demoCreds.get(userId) ?? null;
+  const sb = createServiceClient();
+  const { data } = await sb.from("users").select("pin_hash").eq("id", userId).maybeSingle();
+  return data?.pin_hash ?? null;
+}
+
+export async function setCredential(userId: string, hash: string): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    demoCreds.set(userId, hash);
+    return;
+  }
+  const sb = createServiceClient();
+  await sb.from("users").update({ pin_hash: hash }).eq("id", userId);
 }
 
 /** Create-or-update a user profile (auth bootstrap + new friends). */

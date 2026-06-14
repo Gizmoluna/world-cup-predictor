@@ -1,76 +1,102 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE, LEAGUE_COOKIE, getSessionUserId } from "@/lib/session";
 import {
-  getUser,
+  getUserByName,
+  getCredential,
+  setCredential,
+  ensureUser,
   savePrediction,
   updateUser,
   getUserPrediction,
 } from "@/lib/data";
+import {
+  hashSecret,
+  verifySecret,
+  signSession,
+  slugId,
+  MIN_SECRET_LENGTH,
+} from "@/lib/auth";
 import { createLeague, joinLeague } from "@/lib/leagues";
 import { getProvider } from "@/lib/football-api/provider";
 import { isLocked } from "@/lib/time";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createClient } from "@/lib/supabase/server";
 import type { AppUser, ConfidenceMultiplier, Prediction } from "@/lib/types";
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
-async function siteOrigin(): Promise<string> {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}`;
+async function setSessionCookie(userId: string, remember: boolean) {
+  const store = await cookies();
+  store.set(SESSION_COOKIE, signSession(userId), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    ...(remember ? { maxAge: ONE_YEAR } : {}),
+  });
 }
 
-// --- demo auth (no Supabase) ---------------------------------------------
+// --- auth: name + PIN/password -------------------------------------------
 
-export async function loginAs(userId: string) {
-  const user = await getUser(userId);
-  if (!user) return { ok: false, error: "Unknown user" };
-  const store = await cookies();
-  store.set(SESSION_COOKIE, userId, { httpOnly: true, sameSite: "lax", path: "/", maxAge: ONE_YEAR });
+export async function signUp(input: {
+  name: string;
+  secret: string;
+  flag?: string;
+  theme?: string;
+  remember?: boolean;
+}) {
+  const name = input.name.trim();
+  if (name.length < 2) return { ok: false as const, error: "Pick a name (2+ characters)." };
+  if (input.secret.length < MIN_SECRET_LENGTH)
+    return { ok: false as const, error: `PIN/password must be at least ${MIN_SECRET_LENGTH} characters.` };
+  if (await getUserByName(name))
+    return { ok: false as const, error: "That name is taken — try another or log in." };
+
+  const id = slugId(name);
+  await ensureUser({
+    id,
+    name,
+    flag: input.flag || "⚽",
+    theme: input.theme || "carina",
+  });
+  await setCredential(id, hashSecret(input.secret));
+  await setSessionCookie(id, input.remember ?? true);
   redirect("/dashboard");
 }
 
-// --- Supabase auth (email magic link + Google) ---------------------------
+export async function logIn(input: { name: string; secret: string; remember?: boolean }) {
+  const user = await getUserByName(input.name.trim());
+  if (!user) return { ok: false as const, error: "No account with that name. Sign up?" };
 
-export async function signInWithEmail(email: string) {
-  if (!isSupabaseConfigured()) return { ok: false, error: "Auth not configured" };
-  const sb = await createClient();
-  const origin = await siteOrigin();
-  const { error } = await sb.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: `${origin}/auth/callback` },
-  });
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
-}
+  const cred = await getCredential(user.id);
+  if (!cred) {
+    // Unclaimed seed account (e.g. Carina/Johnny): first PIN entered claims it.
+    if (input.secret.length < MIN_SECRET_LENGTH)
+      return { ok: false as const, error: `Choose a PIN/password (${MIN_SECRET_LENGTH}+ chars) to claim this account.` };
+    await setCredential(user.id, hashSecret(input.secret));
+  } else if (!verifySecret(input.secret, cred)) {
+    return { ok: false as const, error: "Wrong PIN/password." };
+  }
 
-export async function signInWithGoogle() {
-  if (!isSupabaseConfigured()) return;
-  const sb = await createClient();
-  const origin = await siteOrigin();
-  const { data } = await sb.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: `${origin}/auth/callback` },
-  });
-  if (data?.url) redirect(data.url);
+  await setSessionCookie(user.id, input.remember ?? true);
+  redirect("/dashboard");
 }
 
 export async function logout() {
-  if (isSupabaseConfigured()) {
-    const sb = await createClient();
-    await sb.auth.signOut();
-  } else {
-    const store = await cookies();
-    store.delete(SESSION_COOKIE);
-  }
+  const store = await cookies();
+  store.delete(SESSION_COOKIE);
   redirect("/");
+}
+
+export async function changePin(newSecret: string) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  if (newSecret.length < MIN_SECRET_LENGTH)
+    return { ok: false as const, error: `PIN/password must be at least ${MIN_SECRET_LENGTH} characters.` };
+  await setCredential(userId, hashSecret(newSecret));
+  return { ok: true as const };
 }
 
 // --- profile --------------------------------------------------------------
