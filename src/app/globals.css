@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/*  Carina vs Johnny — World Cup Clash design tokens                   */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --background: #060912;
+  --surface: #0d1424;
+  --surface-2: #131c30;
+  --foreground: #eaf0ff;
+  --muted: #8a96b3;
+  --border: rgba(255, 255, 255, 0.08);
+
+  --gold: #ffd34d;
+  --gold-deep: #d4a017;
+  --pitch: #1fd65f;
+  --pitch-deep: #0f9d4a;
+  --danger: #ff4d6d;
+
+  /* per-user accent, overridden by [data-theme] */
+  --accent: var(--gold);
+  --accent-soft: rgba(255, 211, 77, 0.16);
+  --accent-glow: 0 0 30px rgba(255, 211, 77, 0.4);
+}
+
+[data-theme="carina"] {
+  --accent: #fcd116;
+  --accent-soft: rgba(252, 209, 22, 0.16);
+  --accent-glow: 0 0 30px rgba(252, 209, 22, 0.45);
+}
+
+[data-theme="johnny"] {
+  --accent: #2ecc71;
+  --accent-soft: rgba(46, 204, 113, 0.16);
+  --accent-glow: 0 0 30px rgba(46, 204, 113, 0.45);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-gold: var(--gold);
+  --color-pitch: var(--pitch);
+  --color-danger: var(--danger);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(31, 214, 95, 0.08), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(255, 211, 77, 0.06), transparent 55%),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pitch-lines::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(transparent 0, transparent calc(50% - 1px), rgba(31, 214, 95, 0.05) 50%, transparent calc(50% + 1px)),
+    radial-gradient(circle at 50% 50%, transparent 78px, rgba(31, 214, 95, 0.05) 79px, transparent 80px);
+  background-size: 100% 100%, 100% 100%;
+}
+
+@layer components {
+  .glass {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+    border: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    border-radius: 1.25rem;
+  }
+  .accent-glow {
+    box-shadow: var(--accent-glow);
+  }
+}
+
+@keyframes flame {
+  0%, 100% { transform: scaleY(1) translateY(0); opacity: 1; }
+  50% { transform: scaleY(1.15) translateY(-2px); opacity: 0.85; }
+}
+.animate-flame { animation: flame 0.9s ease-in-out infinite; }
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft); }
+  50% { box-shadow: 0 0 28px 4px var(--accent-soft); }
+}
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

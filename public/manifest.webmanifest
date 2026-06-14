@@ -1,0 +1,15 @@
+{
+  "name": "Carina vs Johnny: World Cup Clash",
+  "short_name": "Clash",
+  "description": "Karina vs Johnny. Every match. Every prediction. Glory forever.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#060912",
+  "theme_color": "#060912",
+  "categories": ["sports", "games"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
