@@ -1,10 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    { "path": "/api/sync/fixtures", "schedule": "0 */6 * * *" },
-    { "path": "/api/sync/live", "schedule": "* * * * *" },
-    { "path": "/api/sync/standings", "schedule": "*/10 * * * *" },
-    { "path": "/api/sync/news", "schedule": "*/30 * * * *" },
-    { "path": "/api/score", "schedule": "*/5 * * * *" }
+    { "path": "/api/score", "schedule": "0 12 * * *" }
   ]
 }

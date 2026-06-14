@@ -47,8 +47,9 @@ no API key**. (Optional: for more complete player stats you can later switch to
    > with `openssl rand -hex 32`.
 
 3. **Deploy**. You'll get a URL like `https://world-cup-predictor.vercel.app`.
-4. `vercel.json` already registers the cron jobs (fixtures/live/standings/news/
-   scoring). They run automatically; `CRON_SECRET` protects them.
+4. Data is fetched **live on every visit** (≤60s fresh), so no cron is required.
+   `vercel.json` adds one **daily** score-persistence cron (Hobby-plan friendly).
+   On Vercel Pro you can restore the more frequent crons in git history.
 
 ---
 
