@@ -94,6 +94,7 @@ create table if not exists predictions (
   extra_time_expected boolean,
   shootout_winner_team_id text,
   confidence_multiplier int not null default 1,
+  wager_amount int not null default 0,
   chaos_pick text,
   heart_pick text,
   head_pick text,

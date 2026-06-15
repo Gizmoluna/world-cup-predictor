@@ -35,6 +35,7 @@ export function PredictionForm({
       predictedHomeScore: 1,
       predictedAwayScore: 1,
       confidenceMultiplier: 1,
+      wagerAmount: 50,
     },
   );
   const [pending, start] = useTransition();
@@ -183,6 +184,38 @@ export function PredictionForm({
           />
         </Section>
       )}
+
+      <Section title="💵 Wager" hint="$100 to stake · exact 3× · result 1.8×">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-3xl font-black text-pitch">${p.wagerAmount ?? 0}</span>
+          <span className="text-xs text-muted">
+            win ${Math.round((p.wagerAmount ?? 0) * 1.8)}–${(p.wagerAmount ?? 0) * 3}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          value={p.wagerAmount ?? 0}
+          onChange={(e) => set({ wagerAmount: Number(e.target.value) })}
+          className="w-full accent-pitch"
+        />
+        <div className="mt-2 grid grid-cols-4 gap-2">
+          {[0, 25, 50, 100].map((v) => (
+            <button
+              key={v}
+              onClick={() => set({ wagerAmount: v })}
+              className={cn(
+                "rounded-lg py-2 text-xs font-bold transition active:scale-95",
+                (p.wagerAmount ?? 0) === v ? "bg-pitch text-black" : "bg-white/8",
+              )}
+            >
+              {v === 100 ? "All in" : `$${v}`}
+            </button>
+          ))}
+        </div>
+      </Section>
 
       <Section title="Confidence boost" hint="multiplies this match · once per round">
         <ChipGroup

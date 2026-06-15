@@ -37,6 +37,7 @@ export interface LeaderboardRow {
   badges: string[];
   currentStreak: number; // +n win streak, -n loss streak
   avgConfidenceAccuracy: number; // 0..100
+  winnings: number; // cumulative fake-money profit/loss ($)
 }
 
 export interface ReadModel {
@@ -131,6 +132,7 @@ export function buildLeaderboard(users: AppUser[], scored: ScoredMatch[]): Leade
     rows.set(u.id, {
       user: u, points: 0, played: 0, matchWins: 0, matchLosses: 0, matchDraws: 0,
       exactScores: 0, perfectPicks: 0, badges: [], currentStreak: 0, avgConfidenceAccuracy: 0,
+      winnings: 0,
     });
   }
 
@@ -141,6 +143,7 @@ export function buildLeaderboard(users: AppUser[], scored: ScoredMatch[]): Leade
       const row = rows.get(s.userId);
       if (!row) continue;
       row.points += s.totalPoints;
+      row.winnings += s.wagerProfit;
       row.played += 1;
       if (s.exactScorePoints > 0) row.exactScores += 1;
       if (s.badges.includes("perfect_prediction") || s.badges.includes("psychic_mode")) row.perfectPicks += 1;

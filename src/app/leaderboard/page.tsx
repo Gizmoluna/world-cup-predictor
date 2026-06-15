@@ -23,6 +23,7 @@ function serialize(rows: LeaderboardRow[]) {
     perfectPicks: r.perfectPicks,
     currentStreak: r.currentStreak,
     avgConfidenceAccuracy: r.avgConfidenceAccuracy,
+    winnings: r.winnings,
   }));
 }
 

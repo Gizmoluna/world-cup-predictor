@@ -1,11 +1,14 @@
 import { requireUser } from "@/lib/session";
 import { getReadModel } from "@/lib/aggregate";
 import { getUsers } from "@/lib/data";
+import { getAllLeagues, getLeagueMembers } from "@/lib/leagues";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AdminPanel } from "@/components/admin-panel";
 import { AdminResetPin } from "@/components/admin-reset-pin";
+import { InviteShare } from "@/components/invite-share";
+import { DeleteLeagueButton } from "@/components/delete-league-button";
 import { isAdmin } from "@/lib/constants";
 import { chrome } from "@/lib/display";
 
@@ -23,6 +26,17 @@ export default async function AdminPage() {
   const [model, users] = await Promise.all([getReadModel(), getUsers()]);
   const admin = isAdmin(user.id);
   const userList = users.map((u) => ({ id: u.id, name: u.name, flag: chrome(u).flag }));
+
+  const leaguesWithCounts = admin
+    ? await Promise.all(
+        (await getAllLeagues()).map(async (l) => ({
+          id: l.id,
+          name: l.name,
+          inviteCode: l.inviteCode,
+          memberCount: (await getLeagueMembers(l.id)).length,
+        })),
+      )
+    : [];
 
   const scoredCount = model.scoredMatches.length;
 
@@ -78,6 +92,31 @@ export default async function AdminPage() {
           <Card className="flex flex-col gap-3">
             <CardTitle>Reset a friend&apos;s PIN</CardTitle>
             <AdminResetPin users={userList} />
+          </Card>
+        )}
+
+        {/* All leagues (admins only) — invite or delete any */}
+        {admin && (
+          <Card className="flex flex-col gap-3">
+            <CardTitle>All leagues ({leaguesWithCounts.length})</CardTitle>
+            {leaguesWithCounts.length === 0 ? (
+              <p className="text-sm text-muted">No leagues yet.</p>
+            ) : (
+              leaguesWithCounts.map((l) => (
+                <div key={l.id} className="rounded-xl bg-surface-2 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-bold">{l.name}</span>
+                    <span className="shrink-0 text-xs text-muted">
+                      {l.memberCount} player{l.memberCount === 1 ? "" : "s"} · {l.inviteCode}
+                    </span>
+                  </div>
+                  <InviteShare leagueName={l.name} code={l.inviteCode} />
+                  <div className="mt-2 flex justify-end">
+                    <DeleteLeagueButton leagueId={l.id} name={l.name} />
+                  </div>
+                </div>
+              ))
+            )}
           </Card>
         )}
 

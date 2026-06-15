@@ -224,6 +224,17 @@ export function calculatePredictionScore(
   const multiplier = prediction.confidenceMultiplier ?? 1;
   const totalPoints = subtotal * multiplier;
 
+  // --- fake-money wager settlement --------------------------------------
+  // $0–$100 staked per match. Exact score pays 3× (profit +2× stake),
+  // correct result pays 1.8× (profit +0.8× stake), otherwise the stake is lost.
+  const wagerAmount = Math.max(0, Math.min(100, Math.round(prediction.wagerAmount ?? 0)));
+  let wagerProfit = 0;
+  if (wagerAmount > 0) {
+    if (exactScore) wagerProfit = wagerAmount * 2;
+    else if (resultCorrect) wagerProfit = Math.round(wagerAmount * 0.8);
+    else wagerProfit = -wagerAmount;
+  }
+
   if (multiplier > 1 && subtotal > 0) badges.push("confidence_king");
   if (subtotal === 0) badges.push("bottled_it");
 
@@ -248,6 +259,8 @@ export function calculatePredictionScore(
     multiplier,
     subtotal,
     totalPoints,
+    wagerAmount,
+    wagerProfit,
     badges,
   };
 }

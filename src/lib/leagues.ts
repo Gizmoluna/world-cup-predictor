@@ -33,6 +33,16 @@ function genCode(): string {
 
 // --- public API -----------------------------------------------------------
 
+/** Every league in the system (admin view). */
+export async function getAllLeagues(): Promise<League[]> {
+  if (!isSupabaseConfigured()) {
+    return [...demoLeagues.values()];
+  }
+  const sb = createServiceClient();
+  const { data } = await sb.from("leagues").select("*").order("created_at");
+  return (data ?? []).map(rowToLeague);
+}
+
 export async function getUserLeagues(userId: string): Promise<League[]> {
   if (!isSupabaseConfigured()) {
     return [...demoLeagues.values()].filter((l) => demoMembers.get(l.id)?.has(userId));
@@ -111,6 +121,18 @@ export async function getLeagueMembers(leagueId: string): Promise<AppUser[]> {
   const ids = new Set<string>((data ?? []).map((r: { user_id: string }) => r.user_id));
   const members = await Promise.all([...ids].map((id) => getUser(id)));
   return members.filter((u): u is AppUser => Boolean(u));
+}
+
+export async function deleteLeague(id: string): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    demoLeagues.delete(id);
+    demoMembers.delete(id);
+    return;
+  }
+  const sb = createServiceClient();
+  await sb.from("league_members").delete().eq("league_id", id);
+  await sb.from("messages").delete().eq("league_id", id);
+  await sb.from("leagues").delete().eq("id", id);
 }
 
 export async function isMember(leagueId: string, userId: string): Promise<boolean> {

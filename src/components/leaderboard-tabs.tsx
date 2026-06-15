@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { rankFor } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface Row {
@@ -17,6 +18,7 @@ interface Row {
   perfectPicks: number;
   currentStreak: number;
   avgConfidenceAccuracy: number;
+  winnings: number;
 }
 
 type Scope = "overall" | "group" | "knockout" | "daily";
@@ -71,7 +73,10 @@ export function LeaderboardTabs({ scopes }: { scopes: Record<Scope, Row[]> }) {
                 {r.currentStreak >= 2 && " 🔥"}
               </p>
               <p className="text-[11px] text-muted">
-                {r.matchWins}W · {r.matchDraws}D · {r.matchLosses}L · {r.exactScores} exact · {r.perfectPicks} perfect
+                {rankFor(r.points).icon} {rankFor(r.points).title} · {r.matchWins}W·{r.matchDraws}D·{r.matchLosses}L · {r.exactScores} exact
+              </p>
+              <p className={cn("text-[11px] font-bold", r.winnings >= 0 ? "text-pitch" : "text-danger")}>
+                {r.winnings >= 0 ? "+" : "−"}${Math.abs(r.winnings)} wagered
               </p>
             </div>
             <div className="text-right">

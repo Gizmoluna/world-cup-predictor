@@ -23,7 +23,7 @@ import {
   slugId,
   MIN_SECRET_LENGTH,
 } from "@/lib/auth";
-import { createLeague, joinLeague, isMember } from "@/lib/leagues";
+import { createLeague, joinLeague, isMember, getLeague, deleteLeague } from "@/lib/leagues";
 import { getMessages, addMessage } from "@/lib/chat";
 import { getUsers } from "@/lib/data";
 import { chrome } from "@/lib/display";
@@ -192,6 +192,22 @@ export async function joinLeagueAction(code: string) {
   store.set(LEAGUE_COOKIE, res.league.id, { httpOnly: true, sameSite: "lax", path: "/", maxAge: ONE_YEAR });
   revalidatePath("/leagues");
   return { ok: true as const, league: res.league };
+}
+
+export async function deleteLeagueAction(leagueId: string) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  const league = await getLeague(leagueId);
+  if (!league) return { ok: false as const, error: "League not found." };
+  if (league.ownerId !== userId && !isAdmin(userId)) {
+    return { ok: false as const, error: "Only the owner or an admin can delete a league." };
+  }
+  await deleteLeague(leagueId);
+  const store = await cookies();
+  if (store.get(LEAGUE_COOKIE)?.value === leagueId) store.delete(LEAGUE_COOKIE);
+  revalidatePath("/leagues");
+  revalidatePath("/admin");
+  return { ok: true as const };
 }
 
 // --- chat -----------------------------------------------------------------

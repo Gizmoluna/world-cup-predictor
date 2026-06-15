@@ -105,6 +105,16 @@ export function isAdmin(id?: string | null): boolean {
   return !!id && ADMIN_USER_IDS.includes(id);
 }
 
+// Gamification: a rank/title earned from total points.
+export function rankFor(points: number): { title: string; icon: string } {
+  if (points >= 120) return { title: "GOAT", icon: "🐐" };
+  if (points >= 80) return { title: "Legend", icon: "🏆" };
+  if (points >= 50) return { title: "Gaffer", icon: "🎯" };
+  if (points >= 25) return { title: "Pundit", icon: "📈" };
+  if (points >= 10) return { title: "Regular", icon: "⚽" };
+  return { title: "Rookie", icon: "🌱" };
+}
+
 export const APP_NAME = "World Cup Predictor";
 export const APP_SHORT = "Predictor";
 export const APP_TAGLINE = "Predict every match";

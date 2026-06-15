@@ -6,6 +6,7 @@ import { Check, Copy, Crown } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { InviteShare } from "./invite-share";
+import { DeleteLeagueButton } from "./delete-league-button";
 import { createLeagueAction, joinLeagueAction, setActiveLeague } from "@/app/actions";
 import { cn } from "@/lib/utils";
 
@@ -85,6 +86,11 @@ export function LeaguesPanel({ leagues }: { leagues: LeagueRow[] }) {
               )}
             </div>
             <InviteShare leagueName={l.name} code={l.inviteCode} />
+            {l.isOwner && (
+              <div className="mt-2 flex justify-end">
+                <DeleteLeagueButton leagueId={l.id} name={l.name} />
+              </div>
+            )}
           </div>
         ))}
       </section>

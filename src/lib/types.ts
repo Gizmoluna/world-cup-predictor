@@ -141,6 +141,8 @@ export interface Prediction {
   extraTimeExpected?: boolean | null;
   shootoutWinnerTeamId?: string | null;
   confidenceMultiplier?: ConfidenceMultiplier;
+  /** Fake-money stake for this match, $0–$100 (allocated per match). */
+  wagerAmount?: number | null;
   // fun / flavour picks (no points, just rivalry colour)
   chaosPick?: string | null;
   heartPick?: string | null;
@@ -173,6 +175,9 @@ export interface PredictionScore {
   /** Points before the confidence multiplier is applied. */
   subtotal: number;
   totalPoints: number;
+  /** Fake-money: amount staked and the profit/loss settled for this match. */
+  wagerAmount: number;
+  wagerProfit: number;
   badges: string[];
   calculatedAt?: string;
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { updateProfile } from "@/app/actions";
 import { PICKER_THEMES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { AppUser, Player, Team } from "@/lib/types";
+
+type RosterPlayer = { id: string; name: string };
 
 const FIELD =
   "h-12 w-full rounded-xl border border-border bg-surface-2 px-3 text-base outline-none focus:border-[var(--accent)]";
@@ -26,6 +28,36 @@ export function SettingsForm({
   );
   const [goldenBootPickId, setGoldenBootPickId] = useState(user.goldenBootPickId ?? "");
   const [theme, setTheme] = useState(user.theme);
+
+  // Roster of the chosen favourite team — loaded on demand so the player
+  // pickers populate even when there's no global player list (live provider).
+  const [roster, setRoster] = useState<RosterPlayer[]>(
+    players.map((p) => ({ id: p.id, name: p.name })),
+  );
+  const [loadingRoster, setLoadingRoster] = useState(false);
+
+  useEffect(() => {
+    if (!favouriteTeamId) {
+      setRoster([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingRoster(true);
+    fetch(`/api/players?team=${encodeURIComponent(favouriteTeamId)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled) setRoster(d.players ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setRoster([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingRoster(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [favouriteTeamId]);
 
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
@@ -115,16 +147,17 @@ export function SettingsForm({
       {/* Favourite player */}
       <div className="flex flex-col gap-2">
         <label htmlFor="fav-player" className="text-xs font-bold uppercase tracking-widest text-muted">
-          Favourite player
+          Favourite player {loadingRoster && <span className="text-muted">· loading…</span>}
         </label>
         <select
           id="fav-player"
           value={favouritePlayerId}
           onChange={(e) => setFavouritePlayerId(e.target.value)}
           className={FIELD}
+          disabled={!favouriteTeamId}
         >
-          <option value="">— None —</option>
-          {players.map((p) => (
+          <option value="">{favouriteTeamId ? "— None —" : "Pick a favourite team first"}</option>
+          {roster.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
             </option>
@@ -155,16 +188,17 @@ export function SettingsForm({
       {/* Golden Boot pick */}
       <div className="flex flex-col gap-2">
         <label htmlFor="golden-boot" className="text-xs font-bold uppercase tracking-widest text-muted">
-          Golden Boot pick
+          Golden Boot pick <span className="text-muted">· from your favourite team</span>
         </label>
         <select
           id="golden-boot"
           value={goldenBootPickId}
           onChange={(e) => setGoldenBootPickId(e.target.value)}
           className={FIELD}
+          disabled={!favouriteTeamId}
         >
-          <option value="">— None —</option>
-          {players.map((p) => (
+          <option value="">{favouriteTeamId ? "— None —" : "Pick a favourite team first"}</option>
+          {roster.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
             </option>

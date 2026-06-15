@@ -65,6 +65,17 @@ export function PredictionSummary({
         ))}
       </dl>
 
+      {(prediction.wagerAmount ?? 0) > 0 && (
+        <div className="mt-2 flex items-center justify-between rounded-lg bg-surface-2 px-3 py-1.5 text-xs">
+          <span className="text-muted">💵 Wagered ${prediction.wagerAmount}</span>
+          {score && (
+            <span className={cn("font-bold", score.wagerProfit >= 0 ? "text-pitch" : "text-danger")}>
+              {score.wagerProfit >= 0 ? "+" : "−"}${Math.abs(score.wagerProfit)}
+            </span>
+          )}
+        </div>
+      )}
+
       {score && score.badges.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {score.badges.map((b) => {
