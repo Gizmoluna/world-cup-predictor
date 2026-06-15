@@ -38,7 +38,15 @@ interface DiscoverRow {
   requested: boolean;
 }
 
-export function LeaguesPanel({ leagues, discover }: { leagues: LeagueRow[]; discover: DiscoverRow[] }) {
+export function LeaguesPanel({
+  leagues,
+  discover,
+  isAdmin = false,
+}: {
+  leagues: LeagueRow[];
+  discover: DiscoverRow[];
+  isAdmin?: boolean;
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [name, setName] = useState("");
@@ -127,7 +135,7 @@ export function LeaguesPanel({ leagues, discover }: { leagues: LeagueRow[]; disc
             <InviteShare leagueName={l.name} code={l.inviteCode} />
 
             {l.isOwner && (
-              <div className="mt-3 flex justify-end border-t border-border/60 pt-2">
+              <div className="mt-3 border-t border-border/60 pt-3">
                 <DeleteLeagueButton leagueId={l.id} name={l.name} />
               </div>
             )}
@@ -140,17 +148,24 @@ export function LeaguesPanel({ leagues, discover }: { leagues: LeagueRow[]; disc
           <h2 className="mb-3 text-sm font-bold">Discover leagues</h2>
           <div className="flex flex-col gap-2">
             {discover.map((d) => (
-              <div key={d.id} className="flex items-center justify-between gap-2 rounded-xl bg-surface-2 px-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-bold">{d.name}</p>
-                  <p className="text-[11px] text-muted">{d.memberCount} player{d.memberCount === 1 ? "" : "s"}</p>
+              <div key={d.id} className="rounded-xl bg-surface-2 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold">{d.name}</p>
+                    <p className="text-[11px] text-muted">{d.memberCount} player{d.memberCount === 1 ? "" : "s"}</p>
+                  </div>
+                  {d.requested ? (
+                    <span className="text-xs font-bold text-pitch">Requested ✓</span>
+                  ) : (
+                    <Button size="sm" variant="outline" disabled={pending} onClick={() => requestJoin(d.id)}>
+                      Request to join
+                    </Button>
+                  )}
                 </div>
-                {d.requested ? (
-                  <span className="text-xs font-bold text-pitch">Requested ✓</span>
-                ) : (
-                  <Button size="sm" variant="outline" disabled={pending} onClick={() => requestJoin(d.id)}>
-                    Request to join
-                  </Button>
+                {isAdmin && (
+                  <div className="mt-2 border-t border-border/60 pt-2">
+                    <DeleteLeagueButton leagueId={d.id} name={d.name} />
+                  </div>
                 )}
               </div>
             ))}

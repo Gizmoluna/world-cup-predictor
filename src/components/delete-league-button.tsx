@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import { Button } from "./ui/button";
 import { deleteLeagueAction } from "@/app/actions";
 
 export function DeleteLeagueButton({
@@ -28,25 +29,29 @@ export function DeleteLeagueButton({
 
   if (!confirming) {
     return (
-      <button
+      <Button
+        variant="danger"
+        size="sm"
+        className="w-full"
         onClick={() => setConfirming(true)}
-        className="flex items-center gap-1 text-[11px] font-bold text-danger/80 hover:text-danger"
       >
-        <Trash2 size={12} /> Delete
-      </button>
+        <Trash2 size={14} /> Delete league
+      </Button>
     );
   }
 
   return (
-    <span className="flex items-center gap-2 text-[11px]">
-      <span className="text-muted">Delete &ldquo;{name}&rdquo;?</span>
-      <button onClick={remove} disabled={pending} className="font-bold text-danger">
-        {pending ? "…" : "Yes"}
-      </button>
-      <button onClick={() => setConfirming(false)} className="font-bold text-muted">
-        No
-      </button>
-      {error && <span className="text-danger">{error}</span>}
-    </span>
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-bold text-danger">Delete &ldquo;{name}&rdquo; for everyone? This can&apos;t be undone.</p>
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="danger" size="sm" disabled={pending} onClick={remove}>
+          {pending ? "Deleting…" : "Yes, delete"}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+          Cancel
+        </Button>
+      </div>
+      {error && <p className="text-xs text-danger">{error}</p>}
+    </div>
   );
 }
