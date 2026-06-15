@@ -18,9 +18,14 @@ export const DEFAULT_LEAGUE_ID = "og";
 const demoLeagues = new Map<string, League>([
   [DEFAULT_LEAGUE_ID, { id: DEFAULT_LEAGUE_ID, name: "Carina vs Johnny", ownerId: "carina", inviteCode: "CLASH26" }],
 ]);
-const demoMembers = new Map<string, Set<string>>([
-  [DEFAULT_LEAGUE_ID, new Set(["carina", "johnny"])],
+// leagueId -> (userId -> joinedAt ISO). OG members joined before everything.
+const EARLY = "2026-01-01T00:00:00.000Z";
+const demoMembers = new Map<string, Map<string, string>>([
+  [DEFAULT_LEAGUE_ID, new Map([["carina", EARLY], ["johnny", EARLY]])],
 ]);
+function nowIso() {
+  return new Date().toISOString();
+}
 
 function genCode(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -79,7 +84,7 @@ export async function createLeague(name: string, ownerId: string): Promise<Leagu
     const id = `lg_${genCode().toLowerCase()}`;
     const league: League = { id, name, ownerId, inviteCode };
     demoLeagues.set(id, league);
-    demoMembers.set(id, new Set([ownerId]));
+    demoMembers.set(id, new Map([[ownerId, nowIso()]]));
     return league;
   }
   const sb = createServiceClient();
@@ -100,7 +105,8 @@ export async function joinLeague(
   const league = await getLeagueByCode(code);
   if (!league) return { ok: false, error: "No league found for that code." };
   if (!isSupabaseConfigured()) {
-    demoMembers.get(league.id)?.add(userId);
+    if (!demoMembers.has(league.id)) demoMembers.set(league.id, new Map());
+    demoMembers.get(league.id)!.set(userId, nowIso());
     return { ok: true, league };
   }
   const sb = createServiceClient();
@@ -112,7 +118,7 @@ export async function joinLeague(
 
 export async function getLeagueMembers(leagueId: string): Promise<AppUser[]> {
   if (!isSupabaseConfigured()) {
-    const ids = demoMembers.get(leagueId) ?? new Set<string>();
+    const ids = demoMembers.get(leagueId) ?? new Map<string, string>();
     const all = await getUsers();
     return all.filter((u) => ids.has(u.id));
   }
@@ -178,8 +184,8 @@ export async function getPendingRequests(leagueId: string): Promise<string[]> {
 
 export async function approveRequest(leagueId: string, userId: string): Promise<void> {
   if (!isSupabaseConfigured()) {
-    if (!demoMembers.has(leagueId)) demoMembers.set(leagueId, new Set());
-    demoMembers.get(leagueId)!.add(userId);
+    if (!demoMembers.has(leagueId)) demoMembers.set(leagueId, new Map());
+    demoMembers.get(leagueId)!.set(userId, nowIso());
     demoRequests.get(leagueId)?.delete(userId);
     return;
   }
@@ -195,6 +201,17 @@ export async function denyRequest(leagueId: string, userId: string): Promise<voi
   }
   const sb = createServiceClient();
   await sb.from("join_requests").delete().eq("league_id", leagueId).eq("user_id", userId);
+}
+
+/** Map of member userId → when they joined (ISO). Used to start scoring fresh. */
+export async function getLeagueMemberSince(leagueId: string): Promise<Map<string, string>> {
+  if (!isSupabaseConfigured()) {
+    return new Map(demoMembers.get(leagueId) ?? new Map());
+  }
+  const sb = createServiceClient();
+  const { data } = await sb.from("league_members").select("user_id, joined_at").eq("league_id", leagueId);
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  return new Map((data ?? []).map((r: any) => [r.user_id, r.joined_at as string]));
 }
 
 export async function isMember(leagueId: string, userId: string): Promise<boolean> {

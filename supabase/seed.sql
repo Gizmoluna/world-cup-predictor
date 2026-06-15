@@ -10,9 +10,10 @@ on conflict (id) do nothing;
 insert into leagues (id, name, owner_id, invite_code) values
   ('00000000-0000-0000-0000-000000000001', 'Friends League', 'carina', 'CLASH26')
 on conflict (id) do nothing;
-insert into league_members (league_id, user_id) values
-  ('00000000-0000-0000-0000-000000000001', 'carina'),
-  ('00000000-0000-0000-0000-000000000001', 'johnny')
+-- Founding members count from the start of the tournament.
+insert into league_members (league_id, user_id, joined_at) values
+  ('00000000-0000-0000-0000-000000000001', 'carina', '2026-01-01T00:00:00Z'),
+  ('00000000-0000-0000-0000-000000000001', 'johnny', '2026-01-01T00:00:00Z')
 on conflict do nothing;
 
 insert into badges (id, name, description, icon, rarity) values

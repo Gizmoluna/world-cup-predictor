@@ -13,7 +13,7 @@ export default async function MatchesPage() {
   const user = await requireUser();
   const league = await getActiveLeague(user.id);
   const members = league ? await getLeagueMembers(league.id) : [user];
-  const model = await getReadModel({ restrictUserIds: members.map((m) => m.id) });
+  const model = await getReadModel(league ? { leagueId: league.id } : { restrictUserIds: [user.id] });
 
   const items = model.matches
     .sort((a, b) => +new Date(a.kickoffAt) - +new Date(b.kickoffAt))

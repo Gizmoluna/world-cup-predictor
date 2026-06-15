@@ -37,7 +37,7 @@ export default async function MatchPage({
   const memberIds = new Set(members.map((m) => m.id));
 
   const [model, events, allPreds] = await Promise.all([
-    getReadModel({ restrictUserIds: members.map((m) => m.id) }),
+    getReadModel(league ? { leagueId: league.id } : { restrictUserIds: [user.id] }),
     provider.getMatchEvents(id),
     getPredictionsForMatch(id),
   ]);

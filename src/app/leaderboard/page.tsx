@@ -1,5 +1,4 @@
 import { requireUser, getActiveLeague } from "@/lib/session";
-import { getLeagueMembers } from "@/lib/leagues";
 import { getReadModel, buildLeaderboard, type LeaderboardRow } from "@/lib/aggregate";
 import { AppShell } from "@/components/app-shell";
 import { LeaderboardTabs } from "@/components/leaderboard-tabs";
@@ -30,8 +29,7 @@ function serialize(rows: LeaderboardRow[]) {
 export default async function LeaderboardPage() {
   const user = await requireUser();
   const league = await getActiveLeague(user.id);
-  const members = league ? await getLeagueMembers(league.id) : [user];
-  const model = await getReadModel({ restrictUserIds: members.map((m) => m.id) });
+  const model = await getReadModel(league ? { leagueId: league.id } : { restrictUserIds: [user.id] });
 
   const groupMatches = model.scoredMatches.filter((s) => s.match.stage === "group");
   const koMatches = model.scoredMatches.filter((s) => s.match.stage !== "group");
@@ -45,9 +43,9 @@ export default async function LeaderboardPage() {
 
   const scopes = {
     overall: serialize(model.leaderboard),
-    group: serialize(buildLeaderboard(model.users, groupMatches)),
-    knockout: serialize(buildLeaderboard(model.users, koMatches)),
-    daily: serialize(buildLeaderboard(model.users, todayMatches)),
+    group: serialize(buildLeaderboard(model.users, groupMatches, model.eligibleFrom)),
+    knockout: serialize(buildLeaderboard(model.users, koMatches, model.eligibleFrom)),
+    daily: serialize(buildLeaderboard(model.users, todayMatches, model.eligibleFrom)),
     global: serialize(globalModel.leaderboard),
   };
 

@@ -24,7 +24,7 @@ export default async function DashboardPage() {
   const members = league ? await getLeagueMembers(league.id) : [user];
   const memberIds = members.map((m) => m.id);
 
-  const model = await getReadModel({ restrictUserIds: memberIds });
+  const model = await getReadModel(league ? { leagueId: league.id } : { restrictUserIds: memberIds });
   const provider = getProvider();
   const [news, bankFacts] = await Promise.all([provider.getNews(), provider.getFacts()]);
   const tickerFacts = [...computeDerivedFacts(model), ...bankFacts].slice(0, 40);

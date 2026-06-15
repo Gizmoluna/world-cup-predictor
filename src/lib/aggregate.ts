@@ -16,6 +16,7 @@ import type {
 } from "@/lib/types";
 import { getProvider } from "@/lib/football-api/provider";
 import { getAllPredictions, getUsers } from "@/lib/data";
+import { getLeagueMembers, getLeagueMemberSince } from "@/lib/leagues";
 import { getAllGroupPredictions } from "@/lib/group-predictions";
 import { getAllKnockoutPredictions } from "@/lib/knockout-predictions";
 import { buildMatchResult } from "@/lib/scoring/buildMatchResult";
@@ -59,13 +60,31 @@ export interface ReadModel {
   leaderboard: LeaderboardRow[];
   teamById: Map<string, Team>;
   playerById: Map<string, Player>;
+  /** userId → join time (ISO); matches before this don't count for that user. */
+  eligibleFrom: Map<string, string>;
   standings: Standing[];
   /** Group name → winning team id, for groups that are mathematically decided. */
   decidedGroupWinners: Map<string, string>;
 }
 
-export async function getReadModel(opts?: { restrictUserIds?: string[] }): Promise<ReadModel> {
+export async function getReadModel(opts?: {
+  restrictUserIds?: string[];
+  leagueId?: string;
+}): Promise<ReadModel> {
   const provider = getProvider();
+
+  // When scoped to a league, restrict to its members and start each member's
+  // scoring from the time they joined (matches before that don't count).
+  let restrictIds = opts?.restrictUserIds;
+  let eligibleFrom = new Map<string, string>();
+  if (opts?.leagueId) {
+    const [members, since] = await Promise.all([
+      getLeagueMembers(opts.leagueId),
+      getLeagueMemberSince(opts.leagueId),
+    ]);
+    restrictIds = members.map((m) => m.id);
+    eligibleFrom = since;
+  }
   const [teams, players, matches, allUsers, allPredictions, standings, groupPreds, koPreds] = await Promise.all([
     provider.getTeams(),
     provider.getPlayers(),
@@ -78,7 +97,7 @@ export async function getReadModel(opts?: { restrictUserIds?: string[] }): Promi
   ]);
 
   // Scope to a league's members when requested.
-  const restrict = opts?.restrictUserIds ? new Set(opts.restrictUserIds) : null;
+  const restrict = restrictIds ? new Set(restrictIds) : null;
   const users = restrict ? allUsers.filter((u) => restrict.has(u.id)) : allUsers;
   const predictions = restrict
     ? allPredictions.filter((p) => restrict.has(p.userId))
@@ -119,7 +138,7 @@ export async function getReadModel(opts?: { restrictUserIds?: string[] }): Promi
     scoredMatches.push({ match: m, scores, winnerUserId });
   });
 
-  const leaderboard = buildLeaderboard(users, scoredMatches);
+  const leaderboard = buildLeaderboard(users, scoredMatches, eligibleFrom);
 
   // --- group-winner futures -------------------------------------------------
   // A group is decided once every team in it has played its 3 games.
@@ -180,12 +199,17 @@ export async function getReadModel(opts?: { restrictUserIds?: string[] }): Promi
     leaderboard,
     teamById,
     playerById,
+    eligibleFrom,
     standings,
     decidedGroupWinners,
   };
 }
 
-export function buildLeaderboard(users: AppUser[], scored: ScoredMatch[]): LeaderboardRow[] {
+export function buildLeaderboard(
+  users: AppUser[],
+  scored: ScoredMatch[],
+  eligibleFrom?: Map<string, string>,
+): LeaderboardRow[] {
   // Chronological for streaks.
   const ordered = [...scored].sort(
     (a, b) => new Date(a.match.kickoffAt).getTime() - new Date(b.match.kickoffAt).getTime(),
@@ -206,6 +230,9 @@ export function buildLeaderboard(users: AppUser[], scored: ScoredMatch[]): Leade
     for (const s of sm.scores) {
       const row = rows.get(s.userId);
       if (!row) continue;
+      // Fresh start: ignore matches that kicked off before this member joined.
+      const from = eligibleFrom?.get(s.userId);
+      if (from && new Date(sm.match.kickoffAt) < new Date(from)) continue;
       row.points += s.totalPoints;
       row.winnings += s.wagerProfit;
       row.played += 1;

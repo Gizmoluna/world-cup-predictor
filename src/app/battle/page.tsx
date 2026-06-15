@@ -23,7 +23,7 @@ export default async function BattlePage() {
   };
   const nameOf = (id: string) => memberById.get(id)?.name ?? id;
 
-  const model = await getReadModel({ restrictUserIds: members.map((m) => m.id) });
+  const model = await getReadModel(league ? { leagueId: league.id } : { restrictUserIds: [user.id] });
 
   const ordered = [...model.scoredMatches].sort(
     (a, b) => +new Date(a.match.kickoffAt) - +new Date(b.match.kickoffAt),
