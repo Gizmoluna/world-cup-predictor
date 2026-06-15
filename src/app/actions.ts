@@ -23,7 +23,10 @@ import {
   slugId,
   MIN_SECRET_LENGTH,
 } from "@/lib/auth";
-import { createLeague, joinLeague } from "@/lib/leagues";
+import { createLeague, joinLeague, isMember } from "@/lib/leagues";
+import { getMessages, addMessage } from "@/lib/chat";
+import { getUsers } from "@/lib/data";
+import { chrome } from "@/lib/display";
 import { getProvider } from "@/lib/football-api/provider";
 import { isLocked } from "@/lib/time";
 import type { AppUser, ConfidenceMultiplier, Prediction } from "@/lib/types";
@@ -189,6 +192,46 @@ export async function joinLeagueAction(code: string) {
   store.set(LEAGUE_COOKIE, res.league.id, { httpOnly: true, sameSite: "lax", path: "/", maxAge: ONE_YEAR });
   revalidatePath("/leagues");
   return { ok: true as const, league: res.league };
+}
+
+// --- chat -----------------------------------------------------------------
+
+export interface ChatLine {
+  id: string;
+  userId: string;
+  name: string;
+  flag: string;
+  body: string;
+  createdAt: string;
+}
+
+export async function fetchMessages(leagueId: string): Promise<{ ok: boolean; messages: ChatLine[] }> {
+  const userId = await getSessionUserId();
+  if (!userId || !(await isMember(leagueId, userId))) return { ok: false, messages: [] };
+  const [msgs, users] = await Promise.all([getMessages(leagueId), getUsers()]);
+  const map = new Map(users.map((u) => [u.id, u]));
+  const messages: ChatLine[] = msgs.map((m) => {
+    const u = map.get(m.userId);
+    return {
+      id: m.id,
+      userId: m.userId,
+      name: u?.name ?? "Player",
+      flag: u ? chrome(u).flag : "⚽",
+      body: m.body,
+      createdAt: m.createdAt,
+    };
+  });
+  return { ok: true, messages };
+}
+
+export async function sendMessage(leagueId: string, body: string) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  if (!(await isMember(leagueId, userId))) return { ok: false as const, error: "You're not in this league." };
+  const text = body.trim().slice(0, 500);
+  if (!text) return { ok: false as const, error: "Say something!" };
+  await addMessage(leagueId, userId, text);
+  return { ok: true as const };
 }
 
 // --- predictions ----------------------------------------------------------

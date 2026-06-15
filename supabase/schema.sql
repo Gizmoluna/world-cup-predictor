@@ -160,7 +160,16 @@ create table if not exists league_members (
   primary key (league_id, user_id)
 );
 
+create table if not exists messages (
+  id uuid primary key default gen_random_uuid(),
+  league_id text not null,
+  user_id text not null,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists predictions_match_idx on predictions(match_id);
+create index if not exists messages_league_idx on messages(league_id, created_at);
 create index if not exists league_members_user_idx on league_members(user_id);
 
 -- RLS on, no public policies (service-role key bypasses it).
@@ -175,3 +184,4 @@ alter table badges enable row level security;
 alter table user_badges enable row level security;
 alter table leagues enable row level security;
 alter table league_members enable row level security;
+alter table messages enable row level security;

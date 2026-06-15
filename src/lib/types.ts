@@ -206,6 +206,14 @@ export interface LeagueMember {
   joinedAt?: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  leagueId: string;
+  userId: UserId;
+  body: string;
+  createdAt: string;
+}
+
 export interface Badge {
   id: string;
   name: string;

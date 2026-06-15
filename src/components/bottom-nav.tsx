@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, CalendarDays, Swords, Trophy, Newspaper, Lightbulb } from "lucide-react";
+import { Home, CalendarDays, Swords, Trophy, Lightbulb, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { href: "/dashboard", label: "Home", Icon: Home },
   { href: "/matches", label: "Matches", Icon: CalendarDays },
   { href: "/battle", label: "Battle", Icon: Swords },
+  { href: "/chat", label: "Chat", Icon: MessageCircle },
   { href: "/leaderboard", label: "Table", Icon: Trophy },
   { href: "/facts", label: "Facts", Icon: Lightbulb },
-  { href: "/news", label: "News", Icon: Newspaper },
 ];
 
 export function BottomNav() {
