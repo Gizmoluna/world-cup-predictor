@@ -52,6 +52,7 @@ export function LeaguesPanel({
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const refresh = () => router.refresh();
 
@@ -78,13 +79,16 @@ export function LeaguesPanel({
   }
 
   function requestJoin(id: string) {
-    start(async () => { await requestJoinAction(id); refresh(); });
+    setBusyId(id);
+    start(async () => { await requestJoinAction(id); setBusyId(null); refresh(); });
   }
   function approve(leagueId: string, userId: string) {
-    start(async () => { await approveJoinAction(leagueId, userId); refresh(); });
+    setBusyId(userId);
+    start(async () => { await approveJoinAction(leagueId, userId); setBusyId(null); refresh(); });
   }
   function deny(leagueId: string, userId: string) {
-    start(async () => { await denyJoinAction(leagueId, userId); refresh(); });
+    setBusyId(userId);
+    start(async () => { await denyJoinAction(leagueId, userId); setBusyId(null); refresh(); });
   }
 
   return (
@@ -119,10 +123,10 @@ export function LeaguesPanel({
                     <div key={r.id} className="flex items-center justify-between gap-2">
                       <span className="truncate text-sm font-bold">{r.flag} {r.name}</span>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="accent" disabled={pending} onClick={() => approve(l.id, r.id)}>
+                        <Button size="sm" variant="accent" disabled={busyId === r.id} onClick={() => approve(l.id, r.id)}>
                           Approve
                         </Button>
-                        <Button size="sm" variant="ghost" disabled={pending} onClick={() => deny(l.id, r.id)}>
+                        <Button size="sm" variant="ghost" disabled={busyId === r.id} onClick={() => deny(l.id, r.id)}>
                           Deny
                         </Button>
                       </div>
@@ -157,8 +161,8 @@ export function LeaguesPanel({
                   {d.requested ? (
                     <span className="text-xs font-bold text-pitch">Requested ✓</span>
                   ) : (
-                    <Button size="sm" variant="outline" disabled={pending} onClick={() => requestJoin(d.id)}>
-                      Request to join
+                    <Button size="sm" variant="outline" disabled={busyId === d.id} onClick={() => requestJoin(d.id)}>
+                      {busyId === d.id ? "…" : "Request to join"}
                     </Button>
                   )}
                 </div>

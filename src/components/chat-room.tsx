@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Send, Smile, ImagePlus } from "lucide-react";
 import { fetchMessages, sendMessage, type ChatLine } from "@/app/actions";
+import { GifPicker } from "./gif-picker";
 import { melbourneTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,7 @@ export function ChatRoom({ leagueId, currentUserId }: { leagueId: string; curren
   const [text, setText] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showGif, setShowGif] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [pending, start] = useTransition();
   const endRef = useRef<HTMLDivElement>(null);
@@ -115,6 +117,12 @@ export function ChatRoom({ leagueId, currentUserId }: { leagueId: string; curren
       </div>
 
       <div className="fixed inset-x-0 bottom-[64px] z-40 mx-auto max-w-xl border-t border-border bg-surface/95 px-4 py-2 backdrop-blur-xl pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        {showGif && (
+          <GifPicker
+            onSelect={(url) => { setShowGif(false); send(url); }}
+            onClose={() => setShowGif(false)}
+          />
+        )}
         {showEmoji && (
           <div className="no-scrollbar mb-2 flex gap-1 overflow-x-auto">
             {EMOJIS.map((e) => (
@@ -129,8 +137,15 @@ export function ChatRoom({ leagueId, currentUserId }: { leagueId: string; curren
           </div>
         )}
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowEmoji((s) => !s)} className="shrink-0 text-muted active:scale-90" aria-label="Emojis">
+          <button onClick={() => { setShowEmoji((s) => !s); setShowGif(false); }} className="shrink-0 text-muted active:scale-90" aria-label="Emojis">
             <Smile size={22} className={showEmoji ? "text-[var(--accent)]" : ""} />
+          </button>
+          <button
+            onClick={() => { setShowGif((s) => !s); setShowEmoji(false); }}
+            className={cn("shrink-0 rounded px-1.5 text-xs font-black active:scale-90", showGif ? "bg-[var(--accent)] text-black" : "bg-surface-2 text-muted")}
+            aria-label="GIFs"
+          >
+            GIF
           </button>
           <button
             onClick={() => fileRef.current?.click()}
