@@ -13,6 +13,7 @@ import { Confetti } from "@/components/confetti";
 import { PredictionForm } from "@/components/prediction-form";
 import { MatchTimeline } from "@/components/match-timeline";
 import { PredictionSummary } from "@/components/prediction-summary";
+import { ShareResult } from "@/components/share-result";
 import { melbourne, isLocked } from "@/lib/time";
 import { chrome } from "@/lib/display";
 import type { AppUser } from "@/lib/types";
@@ -115,6 +116,18 @@ export default async function MatchPage({
           {match.venue} · {melbourne(match.kickoffAt)} (Melb)
         </p>
       </div>
+
+      {finished && myScore && (
+        <div className="mb-4">
+          <ShareResult
+            matchId={id}
+            name={user.name}
+            pts={myScore.totalPoints}
+            tag={bigWin ? "EXACT" : gotResult ? "CORRECT" : ""}
+            label={`I scored ${myScore.totalPoints} pts on ${home.shortName} v ${away.shortName}`}
+          />
+        </div>
+      )}
 
       {(live || finished) && events.length > 0 && (
         <div className="mb-4">

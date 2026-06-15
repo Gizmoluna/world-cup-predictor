@@ -211,6 +211,44 @@ export async function deleteLeagueAction(leagueId: string) {
   return { ok: true as const };
 }
 
+// --- daily streak ----------------------------------------------------------
+
+function melbourneToday(): string {
+  // yyyy-MM-dd in Melbourne, computed server-side.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Australia/Melbourne",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+export async function touchStreak(): Promise<{ streak: number; increased: boolean; milestone: number | null }> {
+  const userId = await getSessionUserId();
+  if (!userId) return { streak: 0, increased: false, milestone: null };
+  const user = await getUser(userId);
+  if (!user) return { streak: 0, increased: false, milestone: null };
+
+  const today = melbourneToday();
+  const last = user.lastActiveDate ?? null;
+  if (last === today) {
+    return { streak: user.streakCount ?? 1, increased: false, milestone: null };
+  }
+
+  // Was the last active day yesterday?
+  const y = new Date(`${today}T00:00:00`);
+  y.setDate(y.getDate() - 1);
+  const yesterday = new Intl.DateTimeFormat("en-CA").format(y);
+  const continued = last === yesterday;
+  const streak = continued ? (user.streakCount ?? 0) + 1 : 1;
+
+  await updateUser(userId, { streakCount: streak, lastActiveDate: today });
+  const MILES = [3, 7, 14, 30];
+  const milestone = MILES.includes(streak) ? streak : null;
+  revalidatePath("/dashboard");
+  return { streak, increased: true, milestone };
+}
+
 // --- group-winner predictions ---------------------------------------------
 
 export async function saveGroupPick(groupName: string, teamId: string) {

@@ -42,6 +42,8 @@ create table if not exists users (
   world_cup_winner_pick_id text,
   golden_boot_pick_id text,
   pin_hash text,
+  streak_count int not null default 0,
+  last_active_date text,
   created_at timestamptz not null default now()
 );
 
@@ -176,6 +178,14 @@ create table if not exists group_predictions (
   primary key (user_id, group_name)
 );
 
+create table if not exists push_subscriptions (
+  endpoint text primary key,
+  user_id text not null,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists predictions_match_idx on predictions(match_id);
 create index if not exists messages_league_idx on messages(league_id, created_at);
 create index if not exists league_members_user_idx on league_members(user_id);
@@ -194,3 +204,4 @@ alter table leagues enable row level security;
 alter table league_members enable row level security;
 alter table messages enable row level security;
 alter table group_predictions enable row level security;
+alter table push_subscriptions enable row level security;

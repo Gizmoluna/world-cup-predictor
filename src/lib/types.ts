@@ -194,6 +194,9 @@ export interface AppUser {
   theme: string; // theme key, e.g. "carina" | "johnny"
   worldCupWinnerPickId?: string | null;
   goldenBootPickId?: string | null;
+  /** Daily check-in streak (consecutive days active). */
+  streakCount?: number | null;
+  lastActiveDate?: string | null; // yyyy-MM-dd (Melbourne)
   createdAt?: string;
 }
 

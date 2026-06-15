@@ -6,6 +6,7 @@ import { SettingsForm } from "@/components/settings-form";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ChangePin } from "@/components/change-pin";
 import { SoundToggle } from "@/components/sound-toggle";
+import { EnableNotifications } from "@/components/enable-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,7 @@ export default async function SettingsPage() {
 
         <Card className="flex flex-col gap-3">
           <CardTitle>Account</CardTitle>
+          <EnableNotifications />
           <SoundToggle />
           <ChangePin />
           <SignOutButton />

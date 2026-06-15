@@ -210,6 +210,8 @@ function rowToUser(r: any): AppUser {
     theme: r.theme ?? "carina",
     worldCupWinnerPickId: r.world_cup_winner_pick_id,
     goldenBootPickId: r.golden_boot_pick_id,
+    streakCount: r.streak_count ?? 0,
+    lastActiveDate: r.last_active_date ?? null,
     createdAt: r.created_at,
   };
 }
@@ -226,6 +228,8 @@ function userToRow(u: Partial<AppUser>): Record<string, unknown> {
   if (u.theme !== undefined) row.theme = u.theme;
   if (u.worldCupWinnerPickId !== undefined) row.world_cup_winner_pick_id = u.worldCupWinnerPickId;
   if (u.goldenBootPickId !== undefined) row.golden_boot_pick_id = u.goldenBootPickId;
+  if (u.streakCount !== undefined) row.streak_count = u.streakCount;
+  if (u.lastActiveDate !== undefined) row.last_active_date = u.lastActiveDate;
   return row;
 }
 
