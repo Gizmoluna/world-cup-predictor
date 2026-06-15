@@ -23,7 +23,16 @@ import {
   slugId,
   MIN_SECRET_LENGTH,
 } from "@/lib/auth";
-import { createLeague, joinLeague, isMember, getLeague, deleteLeague } from "@/lib/leagues";
+import {
+  createLeague,
+  joinLeague,
+  isMember,
+  getLeague,
+  deleteLeague,
+  requestToJoin,
+  approveRequest,
+  denyRequest,
+} from "@/lib/leagues";
 import { getMessages, addMessage } from "@/lib/chat";
 import { saveGroupPrediction } from "@/lib/group-predictions";
 import { saveKnockoutPrediction } from "@/lib/knockout-predictions";
@@ -194,6 +203,37 @@ export async function joinLeagueAction(code: string) {
   store.set(LEAGUE_COOKIE, res.league.id, { httpOnly: true, sameSite: "lax", path: "/", maxAge: ONE_YEAR });
   revalidatePath("/leagues");
   return { ok: true as const, league: res.league };
+}
+
+export async function requestJoinAction(leagueId: string) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  await requestToJoin(leagueId, userId);
+  revalidatePath("/leagues");
+  return { ok: true as const };
+}
+
+async function ownsOrAdmin(leagueId: string, userId: string): Promise<boolean> {
+  const league = await getLeague(leagueId);
+  return Boolean(league && (league.ownerId === userId || isAdmin(userId)));
+}
+
+export async function approveJoinAction(leagueId: string, targetUserId: string) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  if (!(await ownsOrAdmin(leagueId, userId))) return { ok: false as const, error: "Owner only." };
+  await approveRequest(leagueId, targetUserId);
+  revalidatePath("/leagues");
+  return { ok: true as const };
+}
+
+export async function denyJoinAction(leagueId: string, targetUserId: string) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  if (!(await ownsOrAdmin(leagueId, userId))) return { ok: false as const, error: "Owner only." };
+  await denyRequest(leagueId, targetUserId);
+  revalidatePath("/leagues");
+  return { ok: true as const };
 }
 
 export async function deleteLeagueAction(leagueId: string) {

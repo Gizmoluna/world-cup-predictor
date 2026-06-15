@@ -1,5 +1,13 @@
 import { requireUser, getActiveLeague } from "@/lib/session";
-import { getUserLeagues, getLeagueMembers } from "@/lib/leagues";
+import {
+  getUserLeagues,
+  getLeagueMembers,
+  getDiscoverableLeagues,
+  getMyPendingLeagueIds,
+  getPendingRequests,
+} from "@/lib/leagues";
+import { getUser } from "@/lib/data";
+import { chrome } from "@/lib/display";
 import { AppShell } from "@/components/app-shell";
 import { LeaguesPanel } from "@/components/leagues-panel";
 
@@ -7,19 +15,44 @@ export const dynamic = "force-dynamic";
 
 export default async function LeaguesPage() {
   const user = await requireUser();
-  const [leagues, active] = await Promise.all([
+  const [leagues, active, discoverRaw, myPending] = await Promise.all([
     getUserLeagues(user.id),
     getActiveLeague(user.id),
+    getDiscoverableLeagues(user.id),
+    getMyPendingLeagueIds(user.id),
   ]);
+  const pendingSet = new Set(myPending);
 
   const withCounts = await Promise.all(
-    leagues.map(async (l) => ({
+    leagues.map(async (l) => {
+      const isOwner = l.ownerId === user.id;
+      // For leagues you own, surface pending join requests.
+      let requests: { id: string; name: string; flag: string }[] = [];
+      if (isOwner) {
+        const ids = await getPendingRequests(l.id);
+        const users = await Promise.all(ids.map((id) => getUser(id)));
+        requests = users
+          .filter((u): u is NonNullable<typeof u> => Boolean(u))
+          .map((u) => ({ id: u.id, name: u.name, flag: chrome(u).flag }));
+      }
+      return {
+        id: l.id,
+        name: l.name,
+        inviteCode: l.inviteCode,
+        isOwner,
+        isActive: l.id === active?.id,
+        memberCount: (await getLeagueMembers(l.id)).length,
+        requests,
+      };
+    }),
+  );
+
+  const discover = await Promise.all(
+    discoverRaw.map(async (l) => ({
       id: l.id,
       name: l.name,
-      inviteCode: l.inviteCode,
-      isOwner: l.ownerId === user.id,
-      isActive: l.id === active?.id,
       memberCount: (await getLeagueMembers(l.id)).length,
+      requested: pendingSet.has(l.id),
     })),
   );
 
@@ -27,9 +60,9 @@ export default async function LeaguesPage() {
     <AppShell>
       <h1 className="title-bc mb-1 text-3xl">Leagues</h1>
       <p className="mb-4 text-sm text-muted">
-        Play with friends. Create a league, share the code, and battle it out.
+        Play with friends. Create a league, share the code, or request to join others.
       </p>
-      <LeaguesPanel leagues={withCounts} />
+      <LeaguesPanel leagues={withCounts} discover={discover} />
     </AppShell>
   );
 }

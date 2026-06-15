@@ -135,6 +135,68 @@ export async function deleteLeague(id: string): Promise<void> {
   await sb.from("leagues").delete().eq("id", id);
 }
 
+// --- join requests (discover + request to join) ---------------------------
+const demoRequests = new Map<string, Set<string>>(); // leagueId -> pending userIds
+
+export async function getDiscoverableLeagues(userId: string): Promise<League[]> {
+  const all = await getAllLeagues();
+  const mine = new Set((await getUserLeagues(userId)).map((l) => l.id));
+  return all.filter((l) => !mine.has(l.id));
+}
+
+export async function requestToJoin(leagueId: string, userId: string): Promise<{ ok: boolean }> {
+  if (await isMember(leagueId, userId)) return { ok: false };
+  if (!isSupabaseConfigured()) {
+    if (!demoRequests.has(leagueId)) demoRequests.set(leagueId, new Set());
+    demoRequests.get(leagueId)!.add(userId);
+    return { ok: true };
+  }
+  const sb = createServiceClient();
+  await sb
+    .from("join_requests")
+    .upsert({ league_id: leagueId, user_id: userId, status: "pending" }, { onConflict: "league_id,user_id" });
+  return { ok: true };
+}
+
+export async function getMyPendingLeagueIds(userId: string): Promise<string[]> {
+  if (!isSupabaseConfigured()) {
+    const out: string[] = [];
+    for (const [lid, set] of demoRequests) if (set.has(userId)) out.push(lid);
+    return out;
+  }
+  const sb = createServiceClient();
+  const { data } = await sb.from("join_requests").select("league_id").eq("user_id", userId).eq("status", "pending");
+  return (data ?? []).map((r: { league_id: string }) => r.league_id);
+}
+
+export async function getPendingRequests(leagueId: string): Promise<string[]> {
+  if (!isSupabaseConfigured()) return [...(demoRequests.get(leagueId) ?? [])];
+  const sb = createServiceClient();
+  const { data } = await sb.from("join_requests").select("user_id").eq("league_id", leagueId).eq("status", "pending");
+  return (data ?? []).map((r: { user_id: string }) => r.user_id);
+}
+
+export async function approveRequest(leagueId: string, userId: string): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    if (!demoMembers.has(leagueId)) demoMembers.set(leagueId, new Set());
+    demoMembers.get(leagueId)!.add(userId);
+    demoRequests.get(leagueId)?.delete(userId);
+    return;
+  }
+  const sb = createServiceClient();
+  await sb.from("league_members").upsert({ league_id: leagueId, user_id: userId }, { onConflict: "league_id,user_id" });
+  await sb.from("join_requests").delete().eq("league_id", leagueId).eq("user_id", userId);
+}
+
+export async function denyRequest(leagueId: string, userId: string): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    demoRequests.get(leagueId)?.delete(userId);
+    return;
+  }
+  const sb = createServiceClient();
+  await sb.from("join_requests").delete().eq("league_id", leagueId).eq("user_id", userId);
+}
+
 export async function isMember(leagueId: string, userId: string): Promise<boolean> {
   if (!isSupabaseConfigured()) return Boolean(demoMembers.get(leagueId)?.has(userId));
   const members = await getLeagueMembers(leagueId);

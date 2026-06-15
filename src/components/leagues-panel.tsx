@@ -7,9 +7,21 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { InviteShare } from "./invite-share";
 import { DeleteLeagueButton } from "./delete-league-button";
-import { createLeagueAction, joinLeagueAction, setActiveLeague } from "@/app/actions";
+import {
+  createLeagueAction,
+  joinLeagueAction,
+  setActiveLeague,
+  requestJoinAction,
+  approveJoinAction,
+  denyJoinAction,
+} from "@/app/actions";
 import { cn } from "@/lib/utils";
 
+interface PendingUser {
+  id: string;
+  name: string;
+  flag: string;
+}
 interface LeagueRow {
   id: string;
   name: string;
@@ -17,9 +29,16 @@ interface LeagueRow {
   isOwner: boolean;
   isActive: boolean;
   memberCount: number;
+  requests: PendingUser[];
+}
+interface DiscoverRow {
+  id: string;
+  name: string;
+  memberCount: number;
+  requested: boolean;
 }
 
-export function LeaguesPanel({ leagues }: { leagues: LeagueRow[] }) {
+export function LeaguesPanel({ leagues, discover }: { leagues: LeagueRow[]; discover: DiscoverRow[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [name, setName] = useState("");
@@ -50,6 +69,16 @@ export function LeaguesPanel({ leagues }: { leagues: LeagueRow[] }) {
     start(async () => { await setActiveLeague(id); refresh(); });
   }
 
+  function requestJoin(id: string) {
+    start(async () => { await requestJoinAction(id); refresh(); });
+  }
+  function approve(leagueId: string, userId: string) {
+    start(async () => { await approveJoinAction(leagueId, userId); refresh(); });
+  }
+  function deny(leagueId: string, userId: string) {
+    start(async () => { await denyJoinAction(leagueId, userId); refresh(); });
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-2">
@@ -72,6 +101,29 @@ export function LeaguesPanel({ leagues }: { leagues: LeagueRow[] }) {
               </Button>
             )}
 
+            {l.isOwner && l.requests.length > 0 && (
+              <div className="mt-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)] p-3">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[var(--accent)]">
+                  Join requests ({l.requests.length})
+                </p>
+                <div className="flex flex-col gap-2">
+                  {l.requests.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-bold">{r.flag} {r.name}</span>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="accent" disabled={pending} onClick={() => approve(l.id, r.id)}>
+                          Approve
+                        </Button>
+                        <Button size="sm" variant="ghost" disabled={pending} onClick={() => deny(l.id, r.id)}>
+                          Deny
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <InviteShare leagueName={l.name} code={l.inviteCode} />
 
             {l.isOwner && (
@@ -82,6 +134,29 @@ export function LeaguesPanel({ leagues }: { leagues: LeagueRow[] }) {
           </div>
         ))}
       </section>
+
+      {discover.length > 0 && (
+        <section className="glass p-4">
+          <h2 className="mb-3 text-sm font-bold">Discover leagues</h2>
+          <div className="flex flex-col gap-2">
+            {discover.map((d) => (
+              <div key={d.id} className="flex items-center justify-between gap-2 rounded-xl bg-surface-2 px-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold">{d.name}</p>
+                  <p className="text-[11px] text-muted">{d.memberCount} player{d.memberCount === 1 ? "" : "s"}</p>
+                </div>
+                {d.requested ? (
+                  <span className="text-xs font-bold text-pitch">Requested ✓</span>
+                ) : (
+                  <Button size="sm" variant="outline" disabled={pending} onClick={() => requestJoin(d.id)}>
+                    Request to join
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="glass p-4">
         <h2 className="mb-3 text-sm font-bold">Create a league</h2>
