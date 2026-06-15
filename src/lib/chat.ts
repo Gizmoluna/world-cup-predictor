@@ -60,12 +60,12 @@ export async function addMessage(
     .from("messages")
     .insert({ league_id: leagueId, user_id: userId, body })
     .select()
-    .single();
+    .maybeSingle();
   return {
-    id: data.id,
-    leagueId: data.league_id,
-    userId: data.user_id,
-    body: data.body,
-    createdAt: data.created_at,
+    id: data?.id ?? `${now}_local`,
+    leagueId: data?.league_id ?? leagueId,
+    userId: data?.user_id ?? userId,
+    body: data?.body ?? body,
+    createdAt: data?.created_at ?? now,
   };
 }
