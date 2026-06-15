@@ -10,12 +10,14 @@ export function TeamFlag({
   size?: number;
   className?: string;
 }) {
-  if (!team) {
+  if (!team || !team.flagUrl) {
     return (
       <span
-        className={cn("inline-block rounded bg-white/10", className)}
+        className={cn("inline-flex items-center justify-center rounded bg-white/10 text-[10px] font-bold text-muted", className)}
         style={{ width: size, height: size * 0.7 }}
-      />
+      >
+        {team?.shortName?.slice(0, 3) ?? ""}
+      </span>
     );
   }
   return (

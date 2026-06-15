@@ -66,7 +66,8 @@ export class EspnProvider implements FootballProvider {
       apiTeamId: r.team.id,
       name: r.team.displayName,
       shortName: r.team.abbreviation ?? r.team.shortDisplayName ?? r.team.displayName,
-      flagUrl: r.team.logo ?? "",
+      // ESPN exposes crests in a `logos` array (not `logo`).
+      flagUrl: r.team.logo ?? r.team.logos?.[0]?.href ?? "",
     }));
   }
 
