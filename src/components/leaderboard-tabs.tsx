@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { rankFor } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { CountUp } from "./count-up";
 
 interface Row {
   userId: string;
@@ -88,7 +89,7 @@ export function LeaderboardTabs({ scopes }: { scopes: Record<Scope, Row[]> }) {
                 </p>
               </div>
               <div className="text-right">
-                <div className="num-bc text-3xl leading-none text-[var(--accent)]">{r.points}</div>
+                <CountUp value={r.points} className="num-bc block text-3xl leading-none text-[var(--accent)]" />
                 <div className="text-[10px] uppercase tracking-wide text-muted">pts · {r.played} pld</div>
               </div>
             </li>

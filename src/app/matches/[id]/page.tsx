@@ -59,6 +59,10 @@ export default async function MatchPage({
   const scores = model.scoresByMatch.get(id) ?? [];
   const sm = model.scoredMatches.find((s) => s.match.id === id);
   const iWon = finished && sm?.winnerUserId === user.id;
+  const myScore = scores.find((s) => s.userId === user.id);
+  // Celebrate a correct result (right outcome or exact score). Bigger for exact.
+  const gotResult = Boolean(finished && myScore && (myScore.resultPoints > 0 || myScore.exactScorePoints > 0));
+  const bigWin = Boolean(finished && myScore && (myScore.exactScorePoints > 0 || myScore.badges.includes("psychic_mode")));
 
   const playerById = {
     ...mapToObj(model.playerById),
@@ -72,7 +76,7 @@ export default async function MatchPage({
 
   return (
     <AppShell>
-      {iWon && <Confetti />}
+      {gotResult && <Confetti dedupeKey={`${id}-${user.id}`} big={bigWin} sound />}
 
       <div className="glass mb-4 p-5">
         <div className="mb-3 flex items-center justify-between text-[11px] font-bold uppercase tracking-wide text-muted">

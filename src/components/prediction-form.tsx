@@ -5,6 +5,7 @@ import { Minus, Plus, Lock } from "lucide-react";
 import type { Match, Player, Prediction, Team } from "@/lib/types";
 import { Button } from "./ui/button";
 import { savePredictionAction } from "@/app/actions";
+import { playLock } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -48,6 +49,7 @@ export function PredictionForm({
     setMsg(null);
     start(async () => {
       const res = await savePredictionAction(p);
+      if (res.ok) playLock();
       setMsg(res.ok ? { ok: true, text: "Locked in. Good luck 🍀" } : { ok: false, text: res.error });
     });
   }

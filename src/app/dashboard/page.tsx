@@ -7,6 +7,7 @@ import { getProvider } from "@/lib/football-api/provider";
 import { AppShell } from "@/components/app-shell";
 import { ScoreBattle } from "@/components/score-battle";
 import { MatchCard, type Predictor } from "@/components/match-card";
+import { HeroMatch } from "@/components/hero-match";
 import { FactTicker } from "@/components/fact-ticker";
 import { Card, CardTitle } from "@/components/ui/card";
 import { computeDerivedFacts } from "@/lib/facts";
@@ -47,6 +48,13 @@ export default async function DashboardPage() {
 
   const me = model.leaderboard.find((r) => r.user.id === user.id);
 
+  // Featured match for the hero banner: live first, else the soonest upcoming.
+  const sorted = [...model.matches].sort((a, b) => +new Date(a.kickoffAt) - +new Date(b.kickoffAt));
+  const featured =
+    sorted.find((m) => m.status === "live") ??
+    sorted.find((m) => m.status === "upcoming") ??
+    sorted[sorted.length - 1];
+
   return (
     <AppShell>
       <div className="flex flex-col gap-5">
@@ -61,6 +69,15 @@ export default async function DashboardPage() {
               : "You're all locked in. Good luck."}
           </p>
         </div>
+
+        {featured && (
+          <HeroMatch
+            match={featured}
+            home={model.teamById.get(featured.homeTeamId)}
+            away={model.teamById.get(featured.awayTeamId)}
+            predicted={model.predictions.some((p) => p.userId === user.id && p.matchId === featured.id)}
+          />
+        )}
 
         {!league && (
           <Link href="/leagues" className="glass block p-4 ring-1 ring-[var(--accent)]/50 transition active:scale-[0.99]">

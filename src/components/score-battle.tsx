@@ -1,6 +1,7 @@
 import type { LeaderboardRow } from "@/lib/aggregate";
 import { chrome } from "@/lib/display";
 import { cn } from "@/lib/utils";
+import { CountUp } from "./count-up";
 
 export function ScoreBattle({
   rows,
@@ -87,7 +88,7 @@ function Side({
         <span className="title-bc text-base">{name}</span>
         {leading && <span title="Leading">👑</span>}
       </div>
-      <div className="num-bc text-5xl leading-none">{points}</div>
+      <CountUp value={points} className="num-bc text-5xl leading-none" />
       <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">points</div>
     </div>
   );
