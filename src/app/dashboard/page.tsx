@@ -51,7 +51,7 @@ export default async function DashboardPage() {
     <AppShell>
       <div className="flex flex-col gap-5">
         <div>
-          <h1 className="text-2xl font-black">
+          <h1 className="title-bc text-3xl">
             Hey {user.name} {chrome(user).flag}
           </h1>
           <p className="text-sm text-muted">

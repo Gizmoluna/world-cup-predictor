@@ -41,7 +41,7 @@ export default async function StandingsPage() {
   return (
     <AppShell>
       <div className="mb-1 flex items-center justify-between">
-        <h1 className="text-2xl font-black">Group Standings</h1>
+        <h1 className="title-bc text-3xl">Group Standings</h1>
         <Link
           href="/predict-groups"
           className="flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-[var(--accent)]"

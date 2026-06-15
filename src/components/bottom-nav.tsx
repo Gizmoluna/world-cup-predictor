@@ -26,11 +26,18 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition",
+                "flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-bold uppercase tracking-wide transition",
                 active ? "text-[var(--accent)]" : "text-muted",
               )}
             >
-              <Icon size={22} className={active ? "drop-shadow-[0_0_8px_var(--accent)]" : ""} />
+              <span
+                className={cn(
+                  "flex h-7 w-12 items-center justify-center rounded-full transition",
+                  active && "bg-[var(--accent-soft)]",
+                )}
+              >
+                <Icon size={20} className={active ? "drop-shadow-[0_0_8px_var(--accent)]" : ""} />
+              </span>
               {label}
             </Link>
           );

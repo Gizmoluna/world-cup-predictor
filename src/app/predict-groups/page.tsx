@@ -34,7 +34,7 @@ export default async function PredictGroupsPage() {
 
   return (
     <AppShell>
-      <h1 className="mb-1 text-2xl font-black">Predict Group Winners 🥇</h1>
+      <h1 className="title-bc mb-1 text-3xl">Predict Group Winners 🥇</h1>
       <p className="mb-4 text-sm text-muted">
         {groups.length
           ? "Pick who tops each group · +10 pts each when it's decided"

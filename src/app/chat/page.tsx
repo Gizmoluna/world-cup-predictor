@@ -26,7 +26,7 @@ export default async function ChatPage() {
   return (
     <AppShell>
       <div className="mb-3">
-        <h1 className="text-2xl font-black">Trash Talk 💬</h1>
+        <h1 className="title-bc text-3xl">Trash Talk 💬</h1>
         <p className="text-sm text-muted">{league.name}</p>
       </div>
       <ChatRoom leagueId={league.id} currentUserId={user.id} />

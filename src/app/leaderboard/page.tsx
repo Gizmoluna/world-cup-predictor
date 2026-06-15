@@ -49,7 +49,7 @@ export default async function LeaderboardPage() {
 
   return (
     <AppShell>
-      <h1 className="mb-4 text-2xl font-black">Leaderboard</h1>
+      <h1 className="title-bc mb-4 text-3xl">Leaderboard</h1>
       <LeaderboardTabs scopes={scopes} />
     </AppShell>
   );

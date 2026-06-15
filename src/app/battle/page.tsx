@@ -51,7 +51,7 @@ export default async function BattlePage() {
 
   return (
     <AppShell>
-      <h1 className="mb-1 text-2xl font-black">The Clash ⚔️</h1>
+      <h1 className="title-bc mb-1 text-3xl">The Clash ⚔️</h1>
       {league && <p className="mb-4 text-sm text-muted">{league.name} · {members.length} players</p>}
 
       <div className="flex flex-col gap-4">

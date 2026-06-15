@@ -22,8 +22,8 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-between gap-2 px-4 py-3">
           <Link href="/dashboard" className="flex items-center gap-2">
             <span className="text-xl">⚽</span>
-            <span className="text-sm font-extrabold tracking-tight">
-              World Cup <span className="text-[var(--accent)]">Predictor</span>
+            <span className="title-bc text-base tracking-[0.04em]">
+              World Cup <span className="text-gradient">Predictor</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">

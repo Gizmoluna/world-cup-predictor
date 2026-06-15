@@ -36,7 +36,7 @@ export default async function MatchesPage() {
   return (
     <AppShell>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-black">Match Centre</h1>
+        <h1 className="title-bc text-3xl">Match Centre</h1>
         <Link
           href="/standings"
           className="flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-[var(--accent)]"

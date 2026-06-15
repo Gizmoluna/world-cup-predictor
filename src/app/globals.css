@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ */
-/*  Carina vs Johnny — World Cup Clash design tokens                   */
+/*  World Cup Predictor — FIFA-broadcast design system                 */
 /* ------------------------------------------------------------------ */
 
 :root {
-  --background: #060912;
-  --surface: #0d1424;
-  --surface-2: #131c30;
-  --foreground: #eaf0ff;
-  --muted: #8a96b3;
-  --border: rgba(255, 255, 255, 0.08);
+  --background: #050813;
+  --surface: #0c1322;
+  --surface-2: #131d33;
+  --foreground: #eef3ff;
+  --muted: #8694b5;
+  --border: rgba(255, 255, 255, 0.09);
 
   --gold: #ffd34d;
   --gold-deep: #d4a017;
@@ -18,23 +18,13 @@
   --pitch-deep: #0f9d4a;
   --danger: #ff4d6d;
 
-  /* per-user accent, overridden by [data-theme] */
   --accent: var(--gold);
   --accent-soft: rgba(255, 211, 77, 0.16);
   --accent-glow: 0 0 30px rgba(255, 211, 77, 0.4);
 }
 
-[data-theme="carina"] {
-  --accent: #fcd116;
-  --accent-soft: rgba(252, 209, 22, 0.16);
-  --accent-glow: 0 0 30px rgba(252, 209, 22, 0.45);
-}
-
-[data-theme="johnny"] {
-  --accent: #2ecc71;
-  --accent-soft: rgba(46, 204, 113, 0.16);
-  --accent-glow: 0 0 30px rgba(46, 204, 113, 0.45);
-}
+[data-theme="carina"] { --accent: #fcd116; --accent-soft: rgba(252,209,22,0.16); --accent-glow: 0 0 30px rgba(252,209,22,0.45); }
+[data-theme="johnny"] { --accent: #2ecc71; --accent-soft: rgba(46,204,113,0.16); --accent-glow: 0 0 30px rgba(46,204,113,0.45); }
 
 @theme inline {
   --color-background: var(--background);
@@ -49,17 +39,16 @@
   --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
 }
 
-html {
-  background: var(--background);
-  color: var(--foreground);
-}
+html { background: var(--background); color: var(--foreground); }
 
 body {
   background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(31, 214, 95, 0.08), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(255, 211, 77, 0.06), transparent 55%),
+    radial-gradient(1100px 520px at 50% -12%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, rgba(31, 214, 95, 0.07), transparent 55%),
+    radial-gradient(700px 500px at 0% 30%, rgba(56, 120, 255, 0.06), transparent 55%),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -67,6 +56,7 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Broadcast pitch backdrop: centre circle + halfway line, faint */
 .pitch-lines::before {
   content: "";
   position: fixed;
@@ -74,34 +64,79 @@ body {
   pointer-events: none;
   z-index: 0;
   background-image:
-    linear-gradient(transparent 0, transparent calc(50% - 1px), rgba(31, 214, 95, 0.05) 50%, transparent calc(50% + 1px)),
-    radial-gradient(circle at 50% 50%, transparent 78px, rgba(31, 214, 95, 0.05) 79px, transparent 80px);
-  background-size: 100% 100%, 100% 100%;
+    linear-gradient(transparent calc(50% - 1px), rgba(31, 214, 95, 0.045) 50%, transparent calc(50% + 1px)),
+    radial-gradient(circle at 50% 50%, transparent 80px, rgba(31, 214, 95, 0.05) 81px, transparent 83px);
 }
 
 @layer components {
   .glass {
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
     border: 1px solid var(--border);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(14px);
     border-radius: 1.25rem;
   }
-  .accent-glow {
-    box-shadow: var(--accent-glow);
+  .accent-glow { box-shadow: var(--accent-glow); }
+
+  /* Broadcast display type — condensed, uppercase, like a TV bug. */
+  .title-bc {
+    font-family: var(--font-display), system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    font-weight: 700;
+    line-height: 0.95;
+  }
+  .num-bc {
+    font-family: var(--font-display), system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+  .text-gradient {
+    background: linear-gradient(100deg, var(--accent), #fff 60%, var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* Card with a broadcast top accent rail */
+  .card-bc {
+    position: relative;
+    overflow: hidden;
+  }
+  .card-bc::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.9;
+  }
+  /* TV scorebug bar */
+  .scorebug {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015)),
+      linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 40%);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
   }
 }
 
-@keyframes flame {
-  0%, 100% { transform: scaleY(1) translateY(0); opacity: 1; }
-  50% { transform: scaleY(1.15) translateY(-2px); opacity: 0.85; }
-}
+@keyframes flame { 0%,100% { transform: scaleY(1) translateY(0); opacity: 1; } 50% { transform: scaleY(1.15) translateY(-2px); opacity: 0.85; } }
 .animate-flame { animation: flame 0.9s ease-in-out infinite; }
 
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft); }
-  50% { box-shadow: 0 0 28px 4px var(--accent-soft); }
-}
+@keyframes pulse-glow { 0%,100% { box-shadow: 0 0 0 0 var(--accent-soft); } 50% { box-shadow: 0 0 28px 4px var(--accent-soft); } }
 .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+@keyframes live-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.animate-live { animation: live-blink 1.1s ease-in-out infinite; }
+
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.shimmer {
+  background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.18) 50%, transparent 80%);
+  background-size: 200% 100%;
+  animation: shimmer 2.4s linear infinite;
+}
+
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.animate-rise { animation: rise 0.4s ease-out both; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
