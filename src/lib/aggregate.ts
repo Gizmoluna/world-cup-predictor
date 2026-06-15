@@ -73,8 +73,12 @@ export async function getReadModel(opts?: { restrictUserIds?: string[] }): Promi
   const playerById = new Map(players.map((p) => [p.id, p]));
   const favByUser = new Map(users.map((u) => [u.id, u.favouriteTeamId ?? null]));
 
-  // Score every finished match.
-  const finished = matches.filter((m) => m.status === "full_time");
+  // Score finished matches — but only the ones someone actually predicted, so
+  // we never fan out a per-match events fetch for the whole tournament.
+  const predictedMatchIds = new Set(predictions.map((p) => p.matchId));
+  const finished = matches.filter(
+    (m) => m.status === "full_time" && predictedMatchIds.has(m.id),
+  );
   const eventsLists = await Promise.all(
     finished.map((m) => provider.getMatchEvents(m.id)),
   );

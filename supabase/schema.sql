@@ -31,6 +31,8 @@ create table if not exists players (
 create table if not exists users (
   id                     text primary key,
   name                   text not null,
+  email                  text,
+  flag                   text,
   avatar_url             text,
   nationality            text,
   favourite_team_id      text references teams(id) on delete set null,
