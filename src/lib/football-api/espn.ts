@@ -66,8 +66,9 @@ export class EspnProvider implements FootballProvider {
       apiTeamId: r.team.id,
       name: r.team.displayName,
       shortName: r.team.abbreviation ?? r.team.shortDisplayName ?? r.team.displayName,
-      // ESPN exposes crests in a `logos` array (not `logo`).
-      flagUrl: r.team.logo ?? r.team.logos?.[0]?.href ?? "",
+      // ESPN exposes crests in a `logos` array (not `logo`). The originals are
+      // 500px (~14KB each); serve a tiny resized version for fast lists.
+      flagUrl: espnSmall(r.team.logo ?? r.team.logos?.[0]?.href ?? ""),
     }));
   }
 
@@ -247,4 +248,10 @@ function parseMinute(v: string | undefined): number | null {
 function toInt(v: unknown): number {
   const n = parseInt(String(v ?? "0"), 10);
   return Number.isNaN(n) ? 0 : n;
+}
+
+// Route ESPN crests through their resizer (~700 bytes vs ~14KB).
+function espnSmall(url: string): string {
+  const m = url.match(/a\.espncdn\.com(\/i\/.+)$/);
+  return m ? `https://a.espncdn.com/combiner/i?img=${m[1]}&w=80&h=80` : url;
 }

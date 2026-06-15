@@ -27,6 +27,8 @@ export function TeamFlag({
       alt={team.name}
       width={size}
       height={size * 0.7}
+      loading="lazy"
+      decoding="async"
       className={cn("inline-block rounded object-cover shadow", className)}
       style={{ width: size, height: size * 0.7 }}
     />
