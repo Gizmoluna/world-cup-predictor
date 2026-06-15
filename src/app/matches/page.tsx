@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { BarChart3 } from "lucide-react";
 import { requireUser, getActiveLeague } from "@/lib/session";
 import { getLeagueMembers } from "@/lib/leagues";
 import { getReadModel } from "@/lib/aggregate";
@@ -33,8 +35,16 @@ export default async function MatchesPage() {
 
   return (
     <AppShell>
-      <h1 className="mb-4 text-2xl font-black">Match Centre</h1>
-      <MatchFilter items={items} groups={groups} />
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-2xl font-black">Match Centre</h1>
+        <Link
+          href="/standings"
+          className="flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-[var(--accent)]"
+        >
+          <BarChart3 size={14} /> Standings
+        </Link>
+      </div>
+      <MatchFilter items={items} groups={groups} favouriteTeamId={user.favouriteTeamId ?? null} />
     </AppShell>
   );
 }

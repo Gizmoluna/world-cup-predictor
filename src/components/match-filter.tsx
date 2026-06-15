@@ -23,9 +23,18 @@ const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: "knockout", label: "Knockout" },
 ];
 
-export function MatchFilter({ items, groups }: { items: Item[]; groups: string[] }) {
+export function MatchFilter({
+  items,
+  groups,
+  favouriteTeamId,
+}: {
+  items: Item[];
+  groups: string[];
+  favouriteTeamId?: string | null;
+}) {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [group, setGroup] = useState<string | "all">("all");
+  const [mineOnly, setMineOnly] = useState(false);
 
   const filtered = items.filter((it) => {
     if (status === "knockout") {
@@ -34,6 +43,11 @@ export function MatchFilter({ items, groups }: { items: Item[]; groups: string[]
       return false;
     }
     if (group !== "all" && it.match.groupName !== group) return false;
+    if (mineOnly && favouriteTeamId) {
+      if (it.match.homeTeamId !== favouriteTeamId && it.match.awayTeamId !== favouriteTeamId) {
+        return false;
+      }
+    }
     return true;
   });
 
@@ -53,6 +67,11 @@ export function MatchFilter({ items, groups }: { items: Item[]; groups: string[]
             {t.label}
           </Chip>
         ))}
+        {favouriteTeamId && (
+          <Chip active={mineOnly} onClick={() => setMineOnly((v) => !v)}>
+            ★ My team
+          </Chip>
+        )}
       </div>
 
       {groups.length > 0 && (

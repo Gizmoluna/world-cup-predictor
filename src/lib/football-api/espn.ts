@@ -22,6 +22,7 @@ import type { FootballProvider } from "./provider";
 import { FACTS_BANK } from "./facts-bank";
 
 const BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
+const CORE = "https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/seasons/2026/types/1";
 // Tournament window — one scoreboard call returns every fixture.
 const DATE_RANGE = "20260601-20260720";
 
@@ -124,9 +125,46 @@ export class EspnProvider implements FootballProvider {
   }
 
   async getStandings(): Promise<Standing[]> {
-    // ESPN's site standings endpoint is unreliable for the WC; the app derives
-    // group leaders from results instead. Return empty.
-    return [];
+    // The 12 World Cup groups live in ESPN's core API. One cached call per
+    // group returns the live table (team id is in the team $ref URL, so no
+    // extra per-team fetch). Cached 30 min.
+    const groups = await Promise.all(
+      Array.from({ length: 12 }, (_, i) =>
+        getJson<any>(`${CORE}/groups/${i + 1}/standings/0?lang=en`, 1800).then((d) => ({
+          n: i + 1,
+          d,
+        })),
+      ),
+    );
+    const out: Standing[] = [];
+    for (const { n, d } of groups) {
+      if (!d) continue;
+      const letter = String.fromCharCode(64 + n); // 1 -> A
+      const entries = d.standings ?? [];
+      for (const e of entries) {
+        const teamId = String((e.team?.$ref?.match(/teams\/(\d+)/) ?? [])[1] ?? "");
+        if (!teamId) continue;
+        const stats: any[] = e.records?.[0]?.stats ?? [];
+        const stat = (name: string) => {
+          const s = stats.find((x) => x.name === name);
+          return s ? Number(s.value) : 0;
+        };
+        out.push({
+          teamId,
+          groupName: `Group ${letter}`,
+          played: stat("gamesPlayed"),
+          won: stat("wins"),
+          drawn: stat("ties"),
+          lost: stat("losses"),
+          goalsFor: stat("pointsFor"),
+          goalsAgainst: stat("pointsAgainst"),
+          goalDifference: stat("pointDifferential"),
+          points: stat("points"),
+          rank: stat("rank"),
+        });
+      }
+    }
+    return out;
   }
 
   async getNews(): Promise<NewsItem[]> {
