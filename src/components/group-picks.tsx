@@ -14,6 +14,7 @@ interface GroupData {
   name: string;
   decidedWinnerId: string | null;
   pickedId: string | null;
+  changeCount?: number;
   teams: GroupTeam[];
 }
 
@@ -23,11 +24,15 @@ export function GroupPicks({ groups }: { groups: GroupData[] }) {
   const [picks, setPicks] = useState<Record<string, string | null>>(
     Object.fromEntries(groups.map((g) => [g.name, g.pickedId])),
   );
+  const [note, setNote] = useState<Record<string, string>>({});
 
   function pick(group: string, teamId: string) {
     setPicks((p) => ({ ...p, [group]: teamId }));
     start(async () => {
-      await saveGroupPick(group, teamId);
+      const res = await saveGroupPick(group, teamId);
+      if (res.ok && res.changed) {
+        setNote((n) => ({ ...n, [group]: `Changed — −2 pts (×${res.changeCount})` }));
+      }
       router.refresh();
     });
   }
@@ -81,6 +86,11 @@ export function GroupPicks({ groups }: { groups: GroupData[] }) {
                 );
               })}
             </div>
+            {(note[g.name] || (g.changeCount ?? 0) > 0) && (
+              <p className="mt-1.5 text-[11px] text-danger">
+                {note[g.name] ?? `Changed ×${g.changeCount} (−${(g.changeCount ?? 0) * 2} pts)`}
+              </p>
+            )}
           </div>
         );
       })}

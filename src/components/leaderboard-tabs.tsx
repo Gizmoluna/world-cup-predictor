@@ -22,10 +22,11 @@ interface Row {
   winnings: number;
 }
 
-type Scope = "overall" | "group" | "knockout" | "daily";
+type Scope = "overall" | "group" | "knockout" | "daily" | "global";
 
 const TABS: { key: Scope; label: string }[] = [
-  { key: "overall", label: "Overall" },
+  { key: "overall", label: "League" },
+  { key: "global", label: "🌍 Global" },
   { key: "group", label: "Group" },
   { key: "knockout", label: "Knockout" },
   { key: "daily", label: "Today" },

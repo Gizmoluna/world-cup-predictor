@@ -26,6 +26,7 @@ import {
 import { createLeague, joinLeague, isMember, getLeague, deleteLeague } from "@/lib/leagues";
 import { getMessages, addMessage } from "@/lib/chat";
 import { saveGroupPrediction } from "@/lib/group-predictions";
+import { saveKnockoutPrediction } from "@/lib/knockout-predictions";
 import { getUsers } from "@/lib/data";
 import { chrome } from "@/lib/display";
 import { getProvider } from "@/lib/football-api/provider";
@@ -254,10 +255,19 @@ export async function touchStreak(): Promise<{ streak: number; increased: boolea
 export async function saveGroupPick(groupName: string, teamId: string) {
   const userId = await getSessionUserId();
   if (!userId) return { ok: false as const, error: "Not signed in" };
-  await saveGroupPrediction(userId, groupName, teamId);
+  const res = await saveGroupPrediction(userId, groupName, teamId);
   revalidatePath("/predict-groups");
   revalidatePath("/leaderboard");
-  return { ok: true as const };
+  return { ok: true as const, ...res };
+}
+
+export async function saveKnockoutPick(matchId: string, teamId: string) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  const res = await saveKnockoutPrediction(userId, matchId, teamId);
+  revalidatePath("/knockout");
+  revalidatePath("/leaderboard");
+  return { ok: true as const, ...res };
 }
 
 // --- chat -----------------------------------------------------------------

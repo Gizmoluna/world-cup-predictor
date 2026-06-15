@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function PredictGroupsPage() {
   const user = await requireUser();
   const [model, picks] = await Promise.all([getReadModel(), getUserGroupPredictions(user.id)]);
-  const pickByGroup = new Map(picks.map((p) => [p.groupName, p.teamId]));
+  const pickByGroup = new Map(picks.map((p) => [p.groupName, p]));
 
   const byGroup = new Map<string, Standing[]>();
   for (const s of model.standings) {
@@ -23,7 +23,8 @@ export default async function PredictGroupsPage() {
     .map(([name, rows]) => ({
       name,
       decidedWinnerId: model.decidedGroupWinners.get(name) ?? null,
-      pickedId: pickByGroup.get(name) ?? null,
+      pickedId: pickByGroup.get(name)?.teamId ?? null,
+      changeCount: pickByGroup.get(name)?.changeCount ?? 0,
       teams: [...rows]
         .sort((a, b) => (a.rank || 99) - (b.rank || 99) || b.points - a.points)
         .map((r) => {
@@ -37,7 +38,7 @@ export default async function PredictGroupsPage() {
       <h1 className="title-bc mb-1 text-3xl">Predict Group Winners 🥇</h1>
       <p className="mb-4 text-sm text-muted">
         {groups.length
-          ? "Pick who tops each group · +10 pts each when it's decided"
+          ? "Pick who tops each group · +10 pts each · change a pick = −2 pts"
           : "Groups will appear once the draw is in the data."}
       </p>
       <GroupPicks groups={groups} />

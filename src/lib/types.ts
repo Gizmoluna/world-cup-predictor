@@ -218,6 +218,14 @@ export interface GroupPrediction {
   userId: UserId;
   groupName: string;
   teamId: string;
+  changeCount?: number;
+}
+
+export interface KnockoutPrediction {
+  userId: UserId;
+  matchId: string;
+  teamId: string;
+  changeCount?: number;
 }
 
 export interface ChatMessage {

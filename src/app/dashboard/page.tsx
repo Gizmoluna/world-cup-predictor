@@ -9,6 +9,7 @@ import { ScoreBattle } from "@/components/score-battle";
 import { MatchCard, type Predictor } from "@/components/match-card";
 import { HeroMatch } from "@/components/hero-match";
 import { StreakBadge } from "@/components/streak-badge";
+import { TournamentHub } from "@/components/tournament-hub";
 import { FactTicker } from "@/components/fact-ticker";
 import { Card, CardTitle } from "@/components/ui/card";
 import { computeDerivedFacts } from "@/lib/facts";
@@ -92,6 +93,8 @@ export default async function DashboardPage() {
         <ScoreBattle rows={model.leaderboard} />
 
         <StreakBadge initial={user.streakCount ?? 0} />
+
+        <TournamentHub />
 
         <FactTicker facts={tickerFacts} />
 

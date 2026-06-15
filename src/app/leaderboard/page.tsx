@@ -40,11 +40,15 @@ export default async function LeaderboardPage() {
     isSameMelbourneDay(s.match.kickoffAt, nowIso),
   );
 
+  // Global = everyone across all leagues (with futures points).
+  const globalModel = await getReadModel();
+
   const scopes = {
     overall: serialize(model.leaderboard),
     group: serialize(buildLeaderboard(model.users, groupMatches)),
     knockout: serialize(buildLeaderboard(model.users, koMatches)),
     daily: serialize(buildLeaderboard(model.users, todayMatches)),
+    global: serialize(globalModel.leaderboard),
   };
 
   return (

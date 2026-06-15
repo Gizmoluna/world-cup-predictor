@@ -25,6 +25,8 @@ export const POINTS = {
   underdogBonus: 3, // correctly called a predicted upset
   // futures
   groupWinner: 10, // correctly predicted a group winner
+  knockoutWinner: 8, // correctly predicted a knockout match winner
+  changePenalty: 2, // deducted each time you change a futures pick
 } as const;
 
 export type PointsConfig = typeof POINTS;

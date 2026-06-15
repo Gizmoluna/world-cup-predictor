@@ -17,6 +17,7 @@ import type {
 import { getProvider } from "@/lib/football-api/provider";
 import { getAllPredictions, getUsers } from "@/lib/data";
 import { getAllGroupPredictions } from "@/lib/group-predictions";
+import { getAllKnockoutPredictions } from "@/lib/knockout-predictions";
 import { buildMatchResult } from "@/lib/scoring/buildMatchResult";
 import { calculatePredictionScore } from "@/lib/scoring/calculatePredictionScore";
 import { POINTS } from "@/lib/scoring/points";
@@ -43,6 +44,8 @@ export interface LeaderboardRow {
   winnings: number; // cumulative fake-money profit/loss ($)
   groupPoints: number; // points from correct group-winner picks
   groupCorrect: number; // count of correct group-winner picks
+  knockoutPoints: number; // points from correct knockout-winner picks
+  futuresPenalty: number; // points lost to changing futures picks
 }
 
 export interface ReadModel {
@@ -63,7 +66,7 @@ export interface ReadModel {
 
 export async function getReadModel(opts?: { restrictUserIds?: string[] }): Promise<ReadModel> {
   const provider = getProvider();
-  const [teams, players, matches, allUsers, allPredictions, standings, groupPreds] = await Promise.all([
+  const [teams, players, matches, allUsers, allPredictions, standings, groupPreds, koPreds] = await Promise.all([
     provider.getTeams(),
     provider.getPlayers(),
     provider.getMatches(),
@@ -71,6 +74,7 @@ export async function getReadModel(opts?: { restrictUserIds?: string[] }): Promi
     getAllPredictions(),
     provider.getStandings(),
     getAllGroupPredictions(),
+    getAllKnockoutPredictions(),
   ]);
 
   // Scope to a league's members when requested.
@@ -137,18 +141,31 @@ export async function getReadModel(opts?: { restrictUserIds?: string[] }): Promi
       if (winner) decidedGroupWinners.set(g, winner.teamId);
     }
   }
-  const restrictSet = restrict;
+  // Decided knockout matches → winner.
+  const koWinner = new Map<string, string>();
+  for (const m of matches) {
+    if (m.stage !== "group" && m.status === "full_time" && m.winnerTeamId) {
+      koWinner.set(m.id, m.winnerTeamId);
+    }
+  }
+
   for (const row of leaderboard) {
-    const picks = groupPreds.filter(
-      (gp) => gp.userId === row.user.id && (!restrictSet || restrictSet.has(gp.userId)),
-    );
-    for (const pick of picks) {
+    const gPicks = groupPreds.filter((gp) => gp.userId === row.user.id);
+    for (const pick of gPicks) {
       if (decidedGroupWinners.get(pick.groupName) === pick.teamId) {
         row.groupPoints += POINTS.groupWinner;
         row.groupCorrect += 1;
       }
+      row.futuresPenalty += (pick.changeCount ?? 0) * POINTS.changePenalty;
     }
-    row.points += row.groupPoints;
+    const kPicks = koPreds.filter((kp) => kp.userId === row.user.id);
+    for (const pick of kPicks) {
+      if (koWinner.get(pick.matchId) === pick.teamId) {
+        row.knockoutPoints += POINTS.knockoutWinner;
+      }
+      row.futuresPenalty += (pick.changeCount ?? 0) * POINTS.changePenalty;
+    }
+    row.points += row.groupPoints + row.knockoutPoints - row.futuresPenalty;
   }
   leaderboard.sort((a, b) => b.points - a.points);
 
@@ -179,7 +196,7 @@ export function buildLeaderboard(users: AppUser[], scored: ScoredMatch[]): Leade
     rows.set(u.id, {
       user: u, points: 0, played: 0, matchWins: 0, matchLosses: 0, matchDraws: 0,
       exactScores: 0, perfectPicks: 0, badges: [], currentStreak: 0, avgConfidenceAccuracy: 0,
-      winnings: 0, groupPoints: 0, groupCorrect: 0,
+      winnings: 0, groupPoints: 0, groupCorrect: 0, knockoutPoints: 0, futuresPenalty: 0,
     });
   }
 

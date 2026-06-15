@@ -175,7 +175,16 @@ create table if not exists group_predictions (
   user_id text not null,
   group_name text not null,
   team_id text not null,
+  change_count int not null default 0,
   primary key (user_id, group_name)
+);
+
+create table if not exists knockout_predictions (
+  user_id text not null,
+  match_id text not null,
+  team_id text not null,
+  change_count int not null default 0,
+  primary key (user_id, match_id)
 );
 
 create table if not exists push_subscriptions (
@@ -204,4 +213,5 @@ alter table leagues enable row level security;
 alter table league_members enable row level security;
 alter table messages enable row level security;
 alter table group_predictions enable row level security;
+alter table knockout_predictions enable row level security;
 alter table push_subscriptions enable row level security;
