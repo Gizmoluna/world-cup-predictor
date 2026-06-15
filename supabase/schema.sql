@@ -187,6 +187,14 @@ create table if not exists knockout_predictions (
   primary key (user_id, match_id)
 );
 
+create table if not exists friend_requests (
+  from_user text not null,
+  to_user text not null,
+  status text not null default 'pending',
+  created_at timestamptz not null default now(),
+  primary key (from_user, to_user)
+);
+
 create table if not exists join_requests (
   league_id text not null,
   user_id text not null,
@@ -223,4 +231,5 @@ alter table messages enable row level security;
 alter table group_predictions enable row level security;
 alter table knockout_predictions enable row level security;
 alter table join_requests enable row level security;
+alter table friend_requests enable row level security;
 alter table push_subscriptions enable row level security;

@@ -1,11 +1,16 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getUser } from "@/lib/data";
 import { getReadModel } from "@/lib/aggregate";
 import { getBadge } from "@/lib/scoring/badges";
+import { getCurrentUser } from "@/lib/session";
+import { friendState, getFriendIds, getIncomingRequests } from "@/lib/friends";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TeamFlag } from "@/components/team-flag";
+import { FriendButton } from "@/components/friend-button";
+import { FriendRequests } from "@/components/friend-requests";
 import { THEMES, DEFAULT_THEME, rival } from "@/lib/constants";
 import { chrome } from "@/lib/display";
 import { cn } from "@/lib/utils";
@@ -66,6 +71,19 @@ export default async function ProfilePage({
 
   const uniqueBadges = Array.from(new Set(row?.badges ?? []));
 
+  // Friends
+  const viewer = await getCurrentUser();
+  const isSelf = viewer?.id === user.id;
+  const friendIds = await getFriendIds(user.id);
+  const friends = (await Promise.all(friendIds.map((id) => getUser(id)))).filter(
+    (u): u is NonNullable<typeof u> => Boolean(u),
+  );
+  const state = viewer && !isSelf ? await friendState(viewer.id, user.id) : "none";
+  const incomingIds = isSelf && viewer ? await getIncomingRequests(viewer.id) : [];
+  const incoming = (await Promise.all(incomingIds.map((id) => getUser(id))))
+    .filter((u): u is NonNullable<typeof u> => Boolean(u))
+    .map((u) => ({ id: u.id, name: u.name, flag: chrome(u).flag }));
+
   return (
     <AppShell>
       <div className="flex flex-col gap-5">
@@ -82,11 +100,38 @@ export default async function ProfilePage({
             <p className="text-sm text-muted">
               {user.nationality ?? r?.nationality ?? "—"}
             </p>
-            <Badge tone="accent" className="mt-1.5">
-              {theme.label} theme
-            </Badge>
+            <div className="mt-1.5 flex items-center gap-2">
+              <Badge tone="accent">{friends.length} friend{friends.length === 1 ? "" : "s"}</Badge>
+              {viewer && !isSelf && <FriendButton targetId={user.id} state={state} />}
+            </div>
           </div>
         </div>
+
+        {/* Friend requests (own profile) */}
+        {isSelf && incoming.length > 0 && (
+          <Card className="flex flex-col gap-3">
+            <CardTitle>Friend requests ({incoming.length})</CardTitle>
+            <FriendRequests requests={incoming} />
+          </Card>
+        )}
+
+        {/* Friends list */}
+        {friends.length > 0 && (
+          <Card className="flex flex-col gap-2">
+            <CardTitle>Friends</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              {friends.map((f) => (
+                <Link
+                  key={f.id}
+                  href={`/profile/${f.id}`}
+                  className="flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1.5 text-sm font-bold"
+                >
+                  {chrome(f).flag} {f.name}
+                </Link>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Picks */}
         <Card className="flex flex-col gap-1">

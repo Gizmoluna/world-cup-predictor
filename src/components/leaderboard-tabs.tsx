@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { rankFor } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { CountUp } from "./count-up";
@@ -64,10 +65,11 @@ export function LeaderboardTabs({ scopes }: { scopes: Record<Scope, Row[]> }) {
           const rank = rankFor(r.points);
           const lead = i === 0 && r.points > 0;
           return (
-            <li
+            <Link
+              href={`/profile/${r.userId}`}
               key={r.userId}
               className={cn(
-                "glass card-bc flex items-center gap-3 p-3.5 animate-rise",
+                "glass card-bc flex items-center gap-3 p-3.5 animate-rise transition active:scale-[0.99]",
                 lead && "ring-1 ring-gold/50 accent-glow",
               )}
               style={{ animationDelay: `${i * 40}ms` }}
@@ -93,7 +95,7 @@ export function LeaderboardTabs({ scopes }: { scopes: Record<Scope, Row[]> }) {
                 <CountUp value={r.points} className="num-bc block text-3xl leading-none text-[var(--accent)]" />
                 <div className="text-[10px] uppercase tracking-wide text-muted">pts · {r.played} pld</div>
               </div>
-            </li>
+            </Link>
           );
         })}
       </ol>
