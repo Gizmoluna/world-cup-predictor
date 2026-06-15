@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { LeaderboardRow } from "@/lib/aggregate";
 import { chrome } from "@/lib/display";
 import { cn } from "@/lib/utils";
@@ -46,7 +47,12 @@ export function ScoreBattle({
             align="right"
           />
         ) : (
-          <div className="flex items-center justify-end px-4 py-6 text-right text-xs text-muted">Invite a rival →</div>
+          <Link
+            href="/leagues"
+            className="flex items-center justify-end px-4 py-6 text-right text-xs font-bold text-[var(--accent)]"
+          >
+            Invite a rival →
+          </Link>
         )}
       </div>
       <div className="relative overflow-hidden border-t border-border bg-black/30 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-muted">

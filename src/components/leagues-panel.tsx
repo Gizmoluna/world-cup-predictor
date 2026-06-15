@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Crown } from "lucide-react";
+import { Crown } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { InviteShare } from "./invite-share";
@@ -25,7 +25,6 @@ export function LeaguesPanel({ leagues }: { leagues: LeagueRow[] }) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
 
   const refresh = () => router.refresh();
 
@@ -47,12 +46,6 @@ export function LeaguesPanel({ leagues }: { leagues: LeagueRow[] }) {
     });
   }
 
-  function copy(c: string) {
-    navigator.clipboard?.writeText(c);
-    setCopied(c);
-    setTimeout(() => setCopied(null), 1500);
-  }
-
   function switchTo(id: string) {
     start(async () => { await setActiveLeague(id); refresh(); });
   }
@@ -61,33 +54,28 @@ export function LeaguesPanel({ leagues }: { leagues: LeagueRow[] }) {
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-2">
         {leagues.map((l) => (
-          <div key={l.id} className={cn("glass p-4", l.isActive && "ring-1 ring-[var(--accent)]/50")}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold">{l.name}</span>
-                {l.isOwner && <Crown size={14} className="text-gold" />}
+          <div key={l.id} className={cn("glass card-bc p-4", l.isActive && "ring-1 ring-[var(--accent)]/50")}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="title-bc truncate text-base">{l.name}</span>
+                {l.isOwner && <Crown size={14} className="shrink-0 text-gold" />}
                 {l.isActive && <Badge tone="accent">Active</Badge>}
               </div>
-              <span className="text-xs text-muted">{l.memberCount} player{l.memberCount === 1 ? "" : "s"}</span>
+              <span className="shrink-0 text-xs text-muted">
+                {l.memberCount} player{l.memberCount === 1 ? "" : "s"}
+              </span>
             </div>
-            <div className="mt-3 flex items-center justify-between gap-2">
-              <button
-                onClick={() => copy(l.inviteCode)}
-                className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-bold"
-                title="Copy invite code"
-              >
-                {copied === l.inviteCode ? <Check size={13} className="text-pitch" /> : <Copy size={13} />}
-                Code: {l.inviteCode}
-              </button>
-              {!l.isActive && (
-                <Button size="sm" variant="outline" disabled={pending} onClick={() => switchTo(l.id)}>
-                  Switch to
-                </Button>
-              )}
-            </div>
+
+            {!l.isActive && (
+              <Button size="sm" variant="outline" className="mt-3 w-full" disabled={pending} onClick={() => switchTo(l.id)}>
+                Switch to this league
+              </Button>
+            )}
+
             <InviteShare leagueName={l.name} code={l.inviteCode} />
+
             {l.isOwner && (
-              <div className="mt-2 flex justify-end">
+              <div className="mt-3 flex justify-end border-t border-border/60 pt-2">
                 <DeleteLeagueButton leagueId={l.id} name={l.name} />
               </div>
             )}

@@ -25,7 +25,7 @@ export default async function LeaguesPage() {
 
   return (
     <AppShell>
-      <h1 className="mb-1 text-2xl font-black">Leagues</h1>
+      <h1 className="title-bc mb-1 text-3xl">Leagues</h1>
       <p className="mb-4 text-sm text-muted">
         Play with friends. Create a league, share the code, and battle it out.
       </p>
