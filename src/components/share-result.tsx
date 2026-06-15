@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Share2, Check } from "lucide-react";
+import { Share2, Check, Copy } from "lucide-react";
 
 export function ShareResult({
   matchId,
@@ -18,41 +18,55 @@ export function ShareResult({
 }) {
   const [copied, setCopied] = useState(false);
 
-  function url() {
+  function link() {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const q = new URLSearchParams({ name });
     if (pts != null) q.set("pts", String(pts));
     if (tag) q.set("tag", tag);
-    return `${origin}/api/share/${matchId}?${q.toString()}`;
+    return `${origin}/r/${matchId}?${q.toString()}`;
   }
 
-  async function share() {
-    const link = url();
-    const text = `${label} — World Cup Predictor`;
+  const message = `${label} — play World Cup Predictor:`;
+
+  async function nativeShare() {
+    const url = link();
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: "World Cup Predictor", text, url: link });
+        await navigator.share({ title: "World Cup Predictor", text: message, url });
         return;
       } catch {
         /* cancelled */
       }
     }
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      window.open(link, "_blank");
-    }
+    copy();
   }
 
+  function copy() {
+    navigator.clipboard?.writeText(`${message} ${link()}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  const waHref = () => `https://wa.me/?text=${encodeURIComponent(`${message} ${link()}`)}`;
+
+  const tile = "flex flex-col items-center justify-center gap-1 rounded-xl bg-surface-2 py-3 text-xs font-bold transition active:scale-95";
+
   return (
-    <button
-      onClick={share}
-      className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/8 py-2.5 text-sm font-bold transition active:scale-95"
-    >
-      {copied ? <Check size={16} className="text-pitch" /> : <Share2 size={16} />}
-      {copied ? "Link copied" : "Share result card"}
-    </button>
+    <div className="flex flex-col gap-2">
+      <button
+        onClick={nativeShare}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-3 text-sm font-bold text-black transition active:scale-[0.98]"
+      >
+        <Share2 size={16} /> Share result card
+      </button>
+      <div className="grid grid-cols-2 gap-2">
+        <a className={tile} href={waHref()} target="_blank" rel="noopener noreferrer">
+          <span className="text-lg">💬</span> WhatsApp
+        </a>
+        <button className={tile} onClick={copy}>
+          {copied ? <Check size={18} className="text-pitch" /> : <Copy size={18} />} {copied ? "Copied" : "Copy link"}
+        </button>
+      </div>
+    </div>
   );
 }

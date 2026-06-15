@@ -118,13 +118,22 @@ export default async function MatchPage({
       </div>
 
       {finished && myScore && (
-        <div className="mb-4">
+        <div className={`mb-4 glass card-bc p-4 ${gotResult ? "ring-1 ring-pitch/50" : ""}`}>
+          {gotResult && (
+            <p className="title-bc mb-2 text-pitch">
+              🎉 You called it{bigWin ? " — exact score!" : ""} · {myScore.totalPoints} pts
+            </p>
+          )}
           <ShareResult
             matchId={id}
             name={user.name}
             pts={myScore.totalPoints}
             tag={bigWin ? "EXACT" : gotResult ? "CORRECT" : ""}
-            label={`I scored ${myScore.totalPoints} pts on ${home.shortName} v ${away.shortName}`}
+            label={
+              gotResult
+                ? `I scored ${myScore.totalPoints} pts on ${home.shortName} v ${away.shortName}`
+                : `${home.shortName} v ${away.shortName}`
+            }
           />
         </div>
       )}
