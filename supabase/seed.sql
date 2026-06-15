@@ -2,13 +2,13 @@
 -- Teams/players/matches are populated by the app's /api/sync/fixtures job.
 
 insert into users (id, name, theme, nationality, flag) values
-  ('carina', 'Carina', 'carina', 'Colombia', '🇨🇴'),
-  ('johnny', 'Johnny', 'johnny', 'Ireland', '🍀')
+  ('carina', 'Carina', 'gold', 'Colombia', '🇨🇴'),
+  ('johnny', 'Johnny', 'emerald', 'Ireland', '🍀')
 on conflict (id) do nothing;
 
--- The OG league.
+-- The starter league everyone can join.
 insert into leagues (id, name, owner_id, invite_code) values
-  ('00000000-0000-0000-0000-000000000001', 'Carina vs Johnny', 'carina', 'CLASH26')
+  ('00000000-0000-0000-0000-000000000001', 'Friends League', 'carina', 'CLASH26')
 on conflict (id) do nothing;
 insert into league_members (league_id, user_id) values
   ('00000000-0000-0000-0000-000000000001', 'carina'),
