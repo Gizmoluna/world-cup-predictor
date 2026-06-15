@@ -2,17 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { updateProfile } from "@/app/actions";
-import { THEMES } from "@/lib/constants";
+import { PICKER_THEMES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { AppUser, Player, Team } from "@/lib/types";
 
 const FIELD =
   "h-12 w-full rounded-xl border border-border bg-surface-2 px-3 text-base outline-none focus:border-[var(--accent)]";
-
-const THEME_KEYS: { key: string; label: string }[] = [
-  { key: "carina", label: "Carina 🇨🇴" },
-  { key: "johnny", label: "Johnny 🇮🇪" },
-];
 
 export function SettingsForm({
   user,
@@ -56,24 +51,26 @@ export function SettingsForm({
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Theme */}
+      {/* Colour theme */}
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-bold uppercase tracking-widest text-muted">Theme</label>
-        <div className="grid grid-cols-2 gap-2">
-          {THEME_KEYS.map((t) => {
+        <label className="text-xs font-bold uppercase tracking-widest text-muted">Colour</label>
+        <div className="grid grid-cols-5 gap-2">
+          {PICKER_THEMES.map((t) => {
             const active = theme === t.key;
             return (
               <button
                 key={t.key}
                 type="button"
                 onClick={() => setTheme(t.key)}
+                title={t.label}
+                aria-label={t.label}
                 className={cn(
-                  "h-16 rounded-2xl border-2 text-base font-extrabold text-black transition active:scale-[0.98]",
-                  active ? "border-white shadow-lg" : "border-transparent opacity-80",
+                  "flex h-12 items-center justify-center rounded-xl transition active:scale-90",
+                  active ? "ring-2 ring-white" : "opacity-85",
                 )}
-                style={{ background: THEMES[t.key]?.gradient }}
+                style={{ background: t.accent }}
               >
-                {t.label}
+                {active && <span className="text-black">✓</span>}
               </button>
             );
           })}

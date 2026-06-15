@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { logIn, signUp } from "@/app/actions";
 import { Button } from "./ui/button";
-import { FLAG_OPTIONS, THEMES } from "@/lib/constants";
+import { FLAG_OPTIONS, PICKER_THEMES, DEFAULT_THEME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface ExistingUser {
@@ -24,7 +24,7 @@ export function AuthForm({
   const [secret, setSecret] = useState("");
   const [show, setShow] = useState(false);
   const [flag, setFlag] = useState("⚽");
-  const [theme, setTheme] = useState("carina");
+  const [theme, setTheme] = useState(DEFAULT_THEME);
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -103,19 +103,21 @@ export function AuthForm({
             ))}
           </div>
 
-          <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-muted">Theme</label>
-          <div className="mb-4 grid grid-cols-2 gap-2">
-            {Object.values(THEMES).map((t) => (
+          <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-muted">Colour</label>
+          <div className="mb-4 grid grid-cols-5 gap-2">
+            {PICKER_THEMES.map((t) => (
               <button
                 key={t.key}
                 onClick={() => setTheme(t.key)}
+                title={t.label}
+                aria-label={t.label}
                 className={cn(
-                  "rounded-xl py-3 text-sm font-bold transition active:scale-95",
-                  theme === t.key ? "text-black" : "text-foreground",
+                  "flex h-10 items-center justify-center rounded-xl transition active:scale-90",
+                  theme === t.key ? "ring-2 ring-white" : "",
                 )}
-                style={{ background: theme === t.key ? t.accent : "rgba(255,255,255,0.06)" }}
+                style={{ background: t.accent }}
               >
-                {t.flag} {t.label} style
+                {theme === t.key && <span className="text-black">✓</span>}
               </button>
             ))}
           </div>

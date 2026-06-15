@@ -5,36 +5,46 @@
 export interface ThemeDef {
   key: string;
   label: string;
-  flag: string;
-  /** CSS custom-property values applied on <html data-theme>. */
   accent: string;
   accentSoft: string;
   glow: string;
   gradient: string;
 }
 
+function theme(key: string, label: string, accent: string): ThemeDef {
+  return {
+    key,
+    label,
+    accent,
+    accentSoft: `${accent}29`, // ~16% alpha (8-digit hex)
+    glow: `0 0 30px ${accent}73`, // ~45% alpha
+    gradient: `linear-gradient(135deg, ${accent} 0%, ${accent}99 100%)`,
+  };
+}
+
+// An inclusive colour palette — anyone picks the look they like.
 export const THEMES: Record<string, ThemeDef> = {
-  carina: {
-    key: "carina",
-    label: "Carina",
-    flag: "🇨🇴",
-    // Colombia: yellow / blue / red
-    accent: "#FCD116",
-    accentSoft: "rgba(252,209,22,0.16)",
-    glow: "0 0 30px rgba(252,209,22,0.45)",
-    gradient: "linear-gradient(135deg,#FCD116 0%,#003893 55%,#CE1126 100%)",
-  },
-  johnny: {
-    key: "johnny",
-    label: "Johnny",
-    flag: "🇮🇪",
-    // Ireland: green / white / orange
-    accent: "#169B62",
-    accentSoft: "rgba(22,155,98,0.16)",
-    glow: "0 0 30px rgba(22,155,98,0.45)",
-    gradient: "linear-gradient(135deg,#169B62 0%,#ffffff 50%,#FF883E 100%)",
-  },
+  gold: theme("gold", "Gold", "#ffd34d"),
+  emerald: theme("emerald", "Emerald", "#2ecc71"),
+  crimson: theme("crimson", "Crimson", "#ff4d6d"),
+  royal: theme("royal", "Royal Blue", "#4f7cff"),
+  violet: theme("violet", "Violet", "#a855f7"),
+  orange: theme("orange", "Orange", "#ff883e"),
+  teal: theme("teal", "Teal", "#2dd4bf"),
+  rose: theme("rose", "Rose", "#ff5fa2"),
+  sky: theme("sky", "Sky", "#38bdf8"),
+  lime: theme("lime", "Lime", "#a3e635"),
+  // Legacy keys so existing accounts still resolve (hidden from the picker).
+  carina: theme("carina", "Gold", "#fcd116"),
+  johnny: theme("johnny", "Emerald", "#2ecc71"),
 };
+
+export const DEFAULT_THEME = "gold";
+
+// The themes shown in the sign-up / settings picker (excludes legacy aliases).
+export const PICKER_THEMES: ThemeDef[] = [
+  "gold", "emerald", "crimson", "royal", "violet", "orange", "teal", "rose", "sky", "lime",
+].map((k) => THEMES[k]);
 
 export interface RivalDef {
   id: string;

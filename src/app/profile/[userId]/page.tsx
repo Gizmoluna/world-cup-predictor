@@ -6,7 +6,8 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TeamFlag } from "@/components/team-flag";
-import { THEMES, rival } from "@/lib/constants";
+import { THEMES, DEFAULT_THEME, rival } from "@/lib/constants";
+import { chrome } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -43,8 +44,9 @@ export default async function ProfilePage({
   const model = await getReadModel();
   const row = model.leaderboard.find((r) => r.user.id === user.id);
 
-  const theme = THEMES[user.theme] ?? THEMES.carina;
+  const theme = THEMES[user.theme] ?? THEMES[DEFAULT_THEME];
   const r = rival(user.id);
+  const userFlag = chrome(user).flag;
 
   const favTeam = user.favouriteTeamId ? model.teamById.get(user.favouriteTeamId) : undefined;
   const favPlayer = user.favouritePlayerId
@@ -73,7 +75,7 @@ export default async function ProfilePage({
             className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl text-4xl shadow-lg"
             style={{ background: theme.gradient }}
           >
-            {r?.flag ?? theme.flag}
+            {userFlag}
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-black">{user.name}</h1>

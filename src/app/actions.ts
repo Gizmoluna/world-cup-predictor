@@ -15,7 +15,7 @@ import {
   updateUser,
   getUserPrediction,
 } from "@/lib/data";
-import { isAdmin } from "@/lib/constants";
+import { isAdmin, DEFAULT_THEME } from "@/lib/constants";
 import {
   hashSecret,
   verifySecret,
@@ -78,7 +78,7 @@ export async function signUp(input: {
     id,
     name,
     flag: input.flag || "⚽",
-    theme: input.theme || "carina",
+    theme: input.theme || DEFAULT_THEME,
   });
   await setCredential(id, hashSecret(input.secret));
   await setSessionCookie(id, input.remember ?? true);
