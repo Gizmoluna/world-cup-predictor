@@ -25,6 +25,7 @@ import {
 } from "@/lib/auth";
 import { createLeague, joinLeague, isMember, getLeague, deleteLeague } from "@/lib/leagues";
 import { getMessages, addMessage } from "@/lib/chat";
+import { saveGroupPrediction } from "@/lib/group-predictions";
 import { getUsers } from "@/lib/data";
 import { chrome } from "@/lib/display";
 import { getProvider } from "@/lib/football-api/provider";
@@ -207,6 +208,17 @@ export async function deleteLeagueAction(leagueId: string) {
   if (store.get(LEAGUE_COOKIE)?.value === leagueId) store.delete(LEAGUE_COOKIE);
   revalidatePath("/leagues");
   revalidatePath("/admin");
+  return { ok: true as const };
+}
+
+// --- group-winner predictions ---------------------------------------------
+
+export async function saveGroupPick(groupName: string, teamId: string) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  await saveGroupPrediction(userId, groupName, teamId);
+  revalidatePath("/predict-groups");
+  revalidatePath("/leaderboard");
   return { ok: true as const };
 }
 

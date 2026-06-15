@@ -211,6 +211,12 @@ export interface LeagueMember {
   joinedAt?: string;
 }
 
+export interface GroupPrediction {
+  userId: UserId;
+  groupName: string;
+  teamId: string;
+}
+
 export interface ChatMessage {
   id: string;
   leagueId: string;

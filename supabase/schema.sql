@@ -169,6 +169,13 @@ create table if not exists messages (
   created_at timestamptz not null default now()
 );
 
+create table if not exists group_predictions (
+  user_id text not null,
+  group_name text not null,
+  team_id text not null,
+  primary key (user_id, group_name)
+);
+
 create index if not exists predictions_match_idx on predictions(match_id);
 create index if not exists messages_league_idx on messages(league_id, created_at);
 create index if not exists league_members_user_idx on league_members(user_id);
@@ -186,3 +193,4 @@ alter table user_badges enable row level security;
 alter table leagues enable row level security;
 alter table league_members enable row level security;
 alter table messages enable row level security;
+alter table group_predictions enable row level security;

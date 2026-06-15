@@ -16,8 +16,11 @@ import type {
 } from "@/lib/types";
 import { getProvider } from "@/lib/football-api/provider";
 import { getAllPredictions, getUsers } from "@/lib/data";
+import { getAllGroupPredictions } from "@/lib/group-predictions";
 import { buildMatchResult } from "@/lib/scoring/buildMatchResult";
 import { calculatePredictionScore } from "@/lib/scoring/calculatePredictionScore";
+import { POINTS } from "@/lib/scoring/points";
+import type { Standing } from "@/lib/types";
 
 export interface ScoredMatch {
   match: Match;
@@ -38,6 +41,8 @@ export interface LeaderboardRow {
   currentStreak: number; // +n win streak, -n loss streak
   avgConfidenceAccuracy: number; // 0..100
   winnings: number; // cumulative fake-money profit/loss ($)
+  groupPoints: number; // points from correct group-winner picks
+  groupCorrect: number; // count of correct group-winner picks
 }
 
 export interface ReadModel {
@@ -51,16 +56,21 @@ export interface ReadModel {
   leaderboard: LeaderboardRow[];
   teamById: Map<string, Team>;
   playerById: Map<string, Player>;
+  standings: Standing[];
+  /** Group name → winning team id, for groups that are mathematically decided. */
+  decidedGroupWinners: Map<string, string>;
 }
 
 export async function getReadModel(opts?: { restrictUserIds?: string[] }): Promise<ReadModel> {
   const provider = getProvider();
-  const [teams, players, matches, allUsers, allPredictions] = await Promise.all([
+  const [teams, players, matches, allUsers, allPredictions, standings, groupPreds] = await Promise.all([
     provider.getTeams(),
     provider.getPlayers(),
     provider.getMatches(),
     getUsers(),
     getAllPredictions(),
+    provider.getStandings(),
+    getAllGroupPredictions(),
   ]);
 
   // Scope to a league's members when requested.
@@ -107,6 +117,41 @@ export async function getReadModel(opts?: { restrictUserIds?: string[] }): Promi
 
   const leaderboard = buildLeaderboard(users, scoredMatches);
 
+  // --- group-winner futures -------------------------------------------------
+  // A group is decided once every team in it has played its 3 games.
+  const byGroup = new Map<string, Standing[]>();
+  for (const s of standings) {
+    if (!byGroup.has(s.groupName)) byGroup.set(s.groupName, []);
+    byGroup.get(s.groupName)!.push(s);
+  }
+  const decidedGroupWinners = new Map<string, string>();
+  for (const [g, rows] of byGroup) {
+    if (rows.length >= 3 && rows.every((r) => r.played >= 3)) {
+      const winner = [...rows].sort(
+        (a, b) =>
+          (a.rank || 99) - (b.rank || 99) ||
+          b.points - a.points ||
+          b.goalDifference - a.goalDifference ||
+          b.goalsFor - a.goalsFor,
+      )[0];
+      if (winner) decidedGroupWinners.set(g, winner.teamId);
+    }
+  }
+  const restrictSet = restrict;
+  for (const row of leaderboard) {
+    const picks = groupPreds.filter(
+      (gp) => gp.userId === row.user.id && (!restrictSet || restrictSet.has(gp.userId)),
+    );
+    for (const pick of picks) {
+      if (decidedGroupWinners.get(pick.groupName) === pick.teamId) {
+        row.groupPoints += POINTS.groupWinner;
+        row.groupCorrect += 1;
+      }
+    }
+    row.points += row.groupPoints;
+  }
+  leaderboard.sort((a, b) => b.points - a.points);
+
   return {
     teams,
     players,
@@ -118,6 +163,8 @@ export async function getReadModel(opts?: { restrictUserIds?: string[] }): Promi
     leaderboard,
     teamById,
     playerById,
+    standings,
+    decidedGroupWinners,
   };
 }
 
@@ -132,7 +179,7 @@ export function buildLeaderboard(users: AppUser[], scored: ScoredMatch[]): Leade
     rows.set(u.id, {
       user: u, points: 0, played: 0, matchWins: 0, matchLosses: 0, matchDraws: 0,
       exactScores: 0, perfectPicks: 0, badges: [], currentStreak: 0, avgConfidenceAccuracy: 0,
-      winnings: 0,
+      winnings: 0, groupPoints: 0, groupCorrect: 0,
     });
   }
 

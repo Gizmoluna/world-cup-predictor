@@ -23,6 +23,8 @@ export const POINTS = {
   // bonuses (added to subtotal, then multiplied)
   perfectPredictionBonus: 3, // exact score + first goal scorer
   underdogBonus: 3, // correctly called a predicted upset
+  // futures
+  groupWinner: 10, // correctly predicted a group winner
 } as const;
 
 export type PointsConfig = typeof POINTS;

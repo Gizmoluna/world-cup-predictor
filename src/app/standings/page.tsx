@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Medal } from "lucide-react";
 import { requireUser } from "@/lib/session";
 import { getProvider } from "@/lib/football-api/provider";
 import { AppShell } from "@/components/app-shell";
@@ -38,7 +40,15 @@ export default async function StandingsPage() {
 
   return (
     <AppShell>
-      <h1 className="mb-1 text-2xl font-black">Group Standings</h1>
+      <div className="mb-1 flex items-center justify-between">
+        <h1 className="text-2xl font-black">Group Standings</h1>
+        <Link
+          href="/predict-groups"
+          className="flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-[var(--accent)]"
+        >
+          <Medal size={14} /> Predict winners
+        </Link>
+      </div>
       <p className="mb-4 text-sm text-muted">
         {ordered.length ? "Live tables · top 2 advance" : "Standings will appear once the group stage is under way."}
       </p>
