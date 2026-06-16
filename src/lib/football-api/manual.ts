@@ -8,6 +8,7 @@ import type {
   Player,
   Standing,
   Team,
+  TournamentLeaders,
   WorldCupFact,
 } from "@/lib/types";
 import type { FootballProvider } from "./provider";
@@ -54,5 +55,10 @@ export class ManualProvider implements FootballProvider {
 
   async getFacts(): Promise<WorldCupFact[]> {
     return FACTS_BANK;
+  }
+
+  // No real stats in seed mode — leaders populate from a live provider (espn).
+  async getLeaders(): Promise<TournamentLeaders> {
+    return { scorers: [], assists: [] };
   }
 }

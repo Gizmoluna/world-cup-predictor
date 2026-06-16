@@ -1,5 +1,7 @@
 import { requireUser } from "@/lib/session";
 import { getReadModel } from "@/lib/aggregate";
+import { getProvider } from "@/lib/football-api/provider";
+import { LeadersCharts } from "@/components/leaders-charts";
 import type { LeaderboardRow } from "@/lib/aggregate";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -34,6 +36,7 @@ type RivalId = (typeof RIVAL_IDS)[number];
 export default async function StatsPage() {
   await requireUser();
   const model = await getReadModel();
+  const leaders = await getProvider().getLeaders();
 
   const rowOf = (id: string): LeaderboardRow | undefined =>
     model.leaderboard.find((r) => r.user.id === id);
@@ -84,6 +87,12 @@ export default async function StatsPage() {
           <h1 className="text-2xl font-black">Deep Stats</h1>
           <p className="text-sm text-muted">The clash, broken down to the bone.</p>
         </div>
+
+        {/* Tournament leaders — live top scorers & assists */}
+        <section className="flex flex-col gap-2">
+          <CardTitle>Tournament leaders</CardTitle>
+          <LeadersCharts scorers={leaders.scorers} assists={leaders.assists} />
+        </section>
 
         {/* (a) Head-to-head summary */}
         <section className="flex flex-col gap-2">

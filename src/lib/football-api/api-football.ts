@@ -19,6 +19,7 @@ import type {
   Player,
   Standing,
   Team,
+  TournamentLeaders,
   WorldCupFact,
 } from "@/lib/types";
 import type { FootballProvider } from "./provider";
@@ -150,6 +151,11 @@ export class ApiFootballProvider implements FootballProvider {
   async getFacts(): Promise<WorldCupFact[]> {
     // No vendor facts endpoint — serve the curated bank; live facts are derived.
     return FACTS_BANK;
+  }
+
+  // Leaders not wired for this provider yet — populate via the espn provider.
+  async getLeaders(): Promise<TournamentLeaders> {
+    return { scorers: [], assists: [] };
   }
 }
 

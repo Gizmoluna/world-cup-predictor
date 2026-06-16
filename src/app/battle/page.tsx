@@ -3,6 +3,7 @@ import { getLeagueMembers } from "@/lib/leagues";
 import { getReadModel } from "@/lib/aggregate";
 import { AppShell } from "@/components/app-shell";
 import { ScoreBattle } from "@/components/score-battle";
+import { TournamentHub } from "@/components/tournament-hub";
 import { Card, CardTitle } from "@/components/ui/card";
 import { WinHistory } from "@/components/win-history";
 import { chrome } from "@/lib/display";
@@ -56,6 +57,9 @@ export default async function BattlePage() {
 
       <div className="flex flex-col gap-4">
         <ScoreBattle rows={model.leaderboard} />
+
+        {/* Predict the bracket: group standings, knockouts, finals + duels. */}
+        <TournamentHub />
 
         {last && (
           <Card>

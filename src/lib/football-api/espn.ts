@@ -16,6 +16,8 @@ import type {
   Player,
   Standing,
   Team,
+  TournamentLeaders,
+  LeaderEntry,
   WorldCupFact,
 } from "@/lib/types";
 import type { FootballProvider } from "./provider";
@@ -186,6 +188,54 @@ export class EspnProvider implements FootballProvider {
 
   async getFacts(): Promise<WorldCupFact[]> {
     return FACTS_BANK;
+  }
+
+  // Top scorers + assists from ESPN's leaders feed. The shape varies and is
+  // empty until matches are played, so parse defensively and return [] on any
+  // mismatch rather than throwing.
+  async getLeaders(): Promise<TournamentLeaders> {
+    const data = await getJson<any>(`${BASE}/leaders`, 900);
+    const categories: any[] = data?.leaders?.categories ?? data?.categories ?? [];
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return { scorers: [], assists: [] };
+    }
+
+    const pickCategory = (match: (name: string) => boolean) =>
+      categories.find((c) => {
+        const n = `${c?.name ?? ""} ${c?.displayName ?? ""} ${c?.abbreviation ?? ""}`.toLowerCase();
+        return match(n);
+      });
+
+    const toEntries = (cat: any): LeaderEntry[] => {
+      const rows: any[] = cat?.leaders ?? [];
+      return rows
+        .map((r) => {
+          const ath = r?.athlete ?? {};
+          const team = r?.team ?? ath?.team ?? {};
+          const id = ath?.id ?? r?.id;
+          if (id == null) return null;
+          return {
+            playerId: String(id),
+            name: ath?.displayName ?? ath?.fullName ?? "Unknown",
+            teamName: team?.displayName ?? team?.abbreviation ?? null,
+            teamFlagUrl: espnSmall(team?.logo ?? team?.logos?.[0]?.href ?? ""),
+            imageUrl: ath?.headshot?.href ?? null,
+            value: Number(r?.value ?? r?.displayValue ?? 0) || 0,
+          } as LeaderEntry;
+        })
+        .filter((e): e is LeaderEntry => Boolean(e))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 15);
+    };
+
+    // Assists first (so "goalAssists" doesn't get grabbed by the scorer match).
+    const assistCat = pickCategory((n) => n.includes("assist"));
+    const scorerCat = pickCategory((n) => n.includes("goal") && !n.includes("assist"));
+
+    return {
+      scorers: scorerCat ? toEntries(scorerCat) : [],
+      assists: assistCat ? toEntries(assistCat) : [],
+    };
   }
 }
 

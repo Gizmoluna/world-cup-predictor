@@ -16,6 +16,7 @@ import type {
   Player,
   Standing,
   Team,
+  TournamentLeaders,
   WorldCupFact,
 } from "@/lib/types";
 
@@ -30,6 +31,8 @@ export interface FootballProvider {
   getNews(): Promise<NewsItem[]>;
   /** Evergreen / externally-sourced World Cup facts (swappable like the rest). */
   getFacts(): Promise<WorldCupFact[]>;
+  /** Live tournament top scorers + assists (empty until data exists). */
+  getLeaders(): Promise<TournamentLeaders>;
 }
 
 export type ProviderName =

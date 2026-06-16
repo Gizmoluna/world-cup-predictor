@@ -326,6 +326,20 @@ export interface WorldCupFact {
   live?: boolean;
 }
 
+// A single row in a tournament leaderboard (top scorers / top assists).
+export interface LeaderEntry {
+  playerId: string;
+  name: string;
+  teamName?: string | null;
+  teamFlagUrl?: string | null;
+  imageUrl?: string | null;
+  value: number; // goals or assists
+}
+export interface TournamentLeaders {
+  scorers: LeaderEntry[];
+  assists: LeaderEntry[];
+}
+
 export interface Standing {
   teamId: string;
   groupName: string;
