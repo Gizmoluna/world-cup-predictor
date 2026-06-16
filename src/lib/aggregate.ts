@@ -19,6 +19,7 @@ import { getAllPredictions, getUsers } from "@/lib/data";
 import { getLeagueMembers, getLeagueMemberSince } from "@/lib/leagues";
 import { getAllGroupPredictions } from "@/lib/group-predictions";
 import { getAllKnockoutPredictions } from "@/lib/knockout-predictions";
+import { getAllGroupOrders, scoreGroupOrder } from "@/lib/group-orders";
 import { buildMatchResult } from "@/lib/scoring/buildMatchResult";
 import { calculatePredictionScore } from "@/lib/scoring/calculatePredictionScore";
 import { POINTS } from "@/lib/scoring/points";
@@ -65,6 +66,8 @@ export interface ReadModel {
   standings: Standing[];
   /** Group name → winning team id, for groups that are mathematically decided. */
   decidedGroupWinners: Map<string, string>;
+  /** Group name → full finishing order (team ids), for decided groups. */
+  decidedGroupOrder: Map<string, string[]>;
 }
 
 export async function getReadModel(opts?: {
@@ -98,6 +101,7 @@ export async function getReadModel(opts?: {
     getAllGroupPredictions(),
     getAllKnockoutPredictions(),
   ]);
+  const groupOrders = await getAllGroupOrders();
 
   // Scope to a league's members when requested.
   const restrict = restrictIds ? new Set(restrictIds) : null;
@@ -108,6 +112,7 @@ export async function getReadModel(opts?: {
 
   const teamById = new Map(teams.map((t) => [t.id, t]));
   const playerById = new Map(players.map((p) => [p.id, p]));
+  const matchById = new Map(matches.map((m) => [m.id, m]));
   const favByUser = new Map(users.map((u) => [u.id, u.favouriteTeamId ?? null]));
 
   // Score finished matches — but only the ones someone actually predicted, so
@@ -151,17 +156,24 @@ export async function getReadModel(opts?: {
     byGroup.get(s.groupName)!.push(s);
   }
   const decidedGroupWinners = new Map<string, string>();
+  const decidedGroupOrder = new Map<string, string[]>();
   for (const [g, rows] of byGroup) {
     if (rows.length >= 3 && rows.every((r) => r.played >= 3)) {
-      const winner = [...rows].sort(
+      const ordered = [...rows].sort(
         (a, b) =>
           (a.rank || 99) - (b.rank || 99) ||
           b.points - a.points ||
           b.goalDifference - a.goalDifference ||
           b.goalsFor - a.goalsFor,
-      )[0];
-      if (winner) decidedGroupWinners.set(g, winner.teamId);
+      );
+      if (ordered[0]) decidedGroupWinners.set(g, ordered[0].teamId);
+      decidedGroupOrder.set(g, ordered.map((r) => r.teamId));
     }
+  }
+  const ordersByUser = new Map<string, Map<string, string[]>>();
+  for (const o of groupOrders) {
+    if (!ordersByUser.has(o.userId)) ordersByUser.set(o.userId, new Map());
+    ordersByUser.get(o.userId)!.set(o.groupName, o.teamIds);
   }
   // Decided knockout matches → winner.
   const koWinner = new Map<string, string>();
@@ -172,9 +184,20 @@ export async function getReadModel(opts?: {
   }
 
   for (const row of leaderboard) {
+    const userOrders = ordersByUser.get(row.user.id) ?? new Map<string, string[]>();
+    // Full group-standings predictions (position-based points).
+    for (const [g, order] of userOrders) {
+      const actual = decidedGroupOrder.get(g);
+      if (actual) {
+        const { points, firstCorrect } = scoreGroupOrder(order, actual);
+        row.groupPoints += points;
+        if (firstCorrect) row.groupCorrect += 1;
+      }
+    }
     const gPicks = groupPreds.filter((gp) => gp.userId === row.user.id);
     for (const pick of gPicks) {
-      if (decidedGroupWinners.get(pick.groupName) === pick.teamId) {
+      // Don't double-count: skip the winner pick if a full order exists for it.
+      if (!userOrders.has(pick.groupName) && decidedGroupWinners.get(pick.groupName) === pick.teamId) {
         row.groupPoints += POINTS.groupWinner;
         row.groupCorrect += 1;
       }
@@ -184,6 +207,12 @@ export async function getReadModel(opts?: {
     for (const pick of kPicks) {
       if (koWinner.get(pick.matchId) === pick.teamId) {
         row.knockoutPoints += POINTS.knockoutWinner;
+      }
+      // Win-method bonus (90 / ET / PENS) once the match is finished.
+      const km = matchById.get(pick.matchId);
+      if (km && km.status === "full_time" && pick.method) {
+        const actual = km.shootout ? "PENS" : km.extraTime ? "ET" : "90";
+        if (pick.method === actual) row.knockoutPoints += POINTS.winMethod;
       }
       row.futuresPenalty += (pick.changeCount ?? 0) * POINTS.changePenalty;
     }
@@ -205,6 +234,7 @@ export async function getReadModel(opts?: {
     eligibleFrom,
     standings,
     decidedGroupWinners,
+    decidedGroupOrder,
   };
 }
 

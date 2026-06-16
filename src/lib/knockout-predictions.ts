@@ -8,14 +8,15 @@ import type { KnockoutPrediction } from "@/lib/types";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/server";
 
-// demo store: userId -> (matchId -> {teamId, changeCount})
-const demo = new Map<string, Map<string, { teamId: string; changeCount: number }>>();
+type Method = "90" | "ET" | "PENS" | null;
+// demo store: userId -> (matchId -> {teamId, changeCount, method})
+const demo = new Map<string, Map<string, { teamId: string; changeCount: number; method: Method }>>();
 
 export async function getAllKnockoutPredictions(): Promise<KnockoutPrediction[]> {
   if (!isSupabaseConfigured()) {
     const out: KnockoutPrediction[] = [];
     for (const [userId, m] of demo)
-      for (const [matchId, v] of m) out.push({ userId, matchId, teamId: v.teamId, changeCount: v.changeCount });
+      for (const [matchId, v] of m) out.push({ userId, matchId, teamId: v.teamId, method: v.method, changeCount: v.changeCount });
     return out;
   }
   const sb = createServiceClient();
@@ -25,6 +26,7 @@ export async function getAllKnockoutPredictions(): Promise<KnockoutPrediction[]>
     userId: r.user_id,
     matchId: r.match_id,
     teamId: r.team_id,
+    method: r.method ?? null,
     changeCount: r.change_count ?? 0,
   }));
 }
@@ -44,7 +46,7 @@ export async function saveKnockoutPrediction(
     const prev = m.get(matchId);
     if (prev && prev.teamId === teamId) return { changed: false, changeCount: prev.changeCount };
     const changeCount = prev ? prev.changeCount + 1 : 0;
-    m.set(matchId, { teamId, changeCount });
+    m.set(matchId, { teamId, changeCount, method: prev?.method ?? null });
     return { changed: Boolean(prev), changeCount };
   }
   const sb = createServiceClient();
@@ -65,4 +67,16 @@ export async function saveKnockoutPrediction(
       { onConflict: "user_id,match_id" },
     );
   return { changed: Boolean(existing), changeCount };
+}
+
+/** Set the win method (90/ET/PENS) on an existing knockout pick. */
+export async function saveKnockoutMethod(userId: string, matchId: string, method: Method): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    const m = demo.get(userId);
+    const prev = m?.get(matchId);
+    if (prev) prev.method = method;
+    return;
+  }
+  const sb = createServiceClient();
+  await sb.from("knockout_predictions").update({ method }).eq("user_id", userId).eq("match_id", matchId);
 }

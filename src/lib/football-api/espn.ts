@@ -199,6 +199,9 @@ function mapEvent(e: any): Match | null {
 
   const state = comp.status?.type?.state ?? "pre";
   const status = mapStatus(state);
+  const sName = String(comp.status?.type?.name ?? "").toUpperCase();
+  const shootout = sName.includes("PEN");
+  const extraTime = shootout || sName.includes("EXTRA") || sName.includes("AET");
   const finished = status === "full_time" || status === "live";
   const homeScore = finished ? toInt(home.score) : null;
   const awayScore = finished ? toInt(away.score) : null;
@@ -222,6 +225,8 @@ function mapEvent(e: any): Match | null {
     homeScore,
     awayScore,
     winnerTeamId,
+    extraTime,
+    shootout,
     lastSyncedAt: new Date().toISOString(),
   };
 }

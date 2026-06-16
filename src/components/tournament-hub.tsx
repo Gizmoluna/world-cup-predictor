@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { BarChart3, Medal, Trophy, Swords } from "lucide-react";
+import { BarChart3, ListOrdered, Trophy, Swords } from "lucide-react";
 
 const ITEMS = [
   { href: "/standings", label: "Standings", sub: "Live group tables", Icon: BarChart3 },
-  { href: "/predict-groups", label: "Group winners", sub: "+10 pts each", Icon: Medal },
-  { href: "/knockout", label: "Knockout", sub: "Bracket · +8 pts", Icon: Trophy },
+  { href: "/predict-standings", label: "Group order", sub: "Rank all 4 · +10/5/3", Icon: ListOrdered },
+  { href: "/knockout", label: "Knockout", sub: "Bracket · 90/ET/pens", Icon: Trophy },
   { href: "/duels", label: "Duels", sub: "Bet a friend $", Icon: Swords },
 ];
 

@@ -35,7 +35,8 @@ import {
 } from "@/lib/leagues";
 import { getMessages, addMessage } from "@/lib/chat";
 import { saveGroupPrediction } from "@/lib/group-predictions";
-import { saveKnockoutPrediction } from "@/lib/knockout-predictions";
+import { saveKnockoutPrediction, saveKnockoutMethod } from "@/lib/knockout-predictions";
+import { saveGroupOrder } from "@/lib/group-orders";
 import { sendFriendRequest, acceptFriend, removeFriend } from "@/lib/friends";
 import { createDuel, setDuelStatus } from "@/lib/duels";
 import { getUsers } from "@/lib/data";
@@ -352,6 +353,24 @@ export async function saveGroupPick(groupName: string, teamId: string) {
   revalidatePath("/predict-groups");
   revalidatePath("/leaderboard");
   return { ok: true as const, ...res };
+}
+
+export async function saveKnockoutMethodPick(matchId: string, method: "90" | "ET" | "PENS") {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  await saveKnockoutMethod(userId, matchId, method);
+  revalidatePath("/knockout");
+  revalidatePath("/leaderboard");
+  return { ok: true as const };
+}
+
+export async function saveGroupOrderPick(groupName: string, teamIds: string[]) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  await saveGroupOrder(userId, groupName, teamIds);
+  revalidatePath("/predict-standings");
+  revalidatePath("/leaderboard");
+  return { ok: true as const };
 }
 
 export async function saveKnockoutPick(matchId: string, teamId: string) {

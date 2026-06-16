@@ -35,6 +35,8 @@ export default async function KnockoutPage() {
       locked: m.status !== "upcoming",
       winnerId: m.status === "full_time" ? m.winnerTeamId ?? null : null,
       pickedId: pick?.teamId ?? null,
+      method: pick?.method ?? null,
+      methodActual: m.status === "full_time" ? (m.shootout ? "PENS" : m.extraTime ? "ET" : "90") : null,
       changeCount: pick?.changeCount ?? 0,
       home: home ? { id: home.id, name: home.shortName ?? home.name, flagUrl: home.flagUrl } : null,
       away: away ? { id: away.id, name: away.shortName ?? away.name, flagUrl: away.flagUrl } : null,

@@ -183,8 +183,16 @@ create table if not exists knockout_predictions (
   user_id text not null,
   match_id text not null,
   team_id text not null,
+  method text,
   change_count int not null default 0,
   primary key (user_id, match_id)
+);
+
+create table if not exists group_orders (
+  user_id text not null,
+  group_name text not null,
+  team_ids text not null,
+  primary key (user_id, group_name)
 );
 
 create table if not exists wager_duels (
@@ -251,6 +259,7 @@ alter table league_members enable row level security;
 alter table messages enable row level security;
 alter table group_predictions enable row level security;
 alter table knockout_predictions enable row level security;
+alter table group_orders enable row level security;
 alter table join_requests enable row level security;
 alter table friend_requests enable row level security;
 alter table wager_duels enable row level security;

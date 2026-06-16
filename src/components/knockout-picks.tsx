@@ -2,8 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { saveKnockoutPick } from "@/app/actions";
+import { saveKnockoutPick, saveKnockoutMethodPick } from "@/app/actions";
 import { cn } from "@/lib/utils";
+
+const METHODS: { key: "90" | "ET" | "PENS"; label: string }[] = [
+  { key: "90", label: "90′" },
+  { key: "ET", label: "Extra time" },
+  { key: "PENS", label: "Penalties" },
+];
 
 const STAGE: Record<string, string> = {
   round_of_32: "Round of 32",
@@ -26,6 +32,8 @@ interface KItem {
   locked: boolean;
   winnerId: string | null;
   pickedId: string | null;
+  method: "90" | "ET" | "PENS" | null;
+  methodActual: string | null;
   changeCount: number;
   home: KTeam | null;
   away: KTeam | null;
@@ -49,6 +57,14 @@ export function KnockoutPicks({ items }: { items: KItem[] }) {
       }
       router.refresh();
     });
+  }
+
+  const [methods, setMethods] = useState<Record<string, string | null>>(
+    Object.fromEntries(items.map((i) => [i.matchId, i.method])),
+  );
+  function pickMethod(matchId: string, m: "90" | "ET" | "PENS") {
+    setMethods((x) => ({ ...x, [matchId]: m }));
+    start(async () => { await saveKnockoutMethodPick(matchId, m); router.refresh(); });
   }
 
   if (items.length === 0) {
@@ -101,6 +117,31 @@ export function KnockoutPicks({ items }: { items: KItem[] }) {
                       );
                     })}
                   </div>
+                  {picked && (
+                    <div className="mt-2">
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted">Decided in · +4</p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {METHODS.map((mo) => {
+                          const on = methods[it.matchId] === mo.key;
+                          const actualHit = it.methodActual === mo.key;
+                          return (
+                            <button
+                              key={mo.key}
+                              onClick={() => !it.locked && pickMethod(it.matchId, mo.key)}
+                              disabled={it.locked}
+                              className={cn(
+                                "rounded-lg py-1.5 text-[11px] font-bold transition active:scale-95",
+                                on ? "bg-[var(--accent)] text-black" : "bg-surface-2",
+                                it.methodActual && actualHit && "ring-1 ring-pitch",
+                              )}
+                            >
+                              {mo.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   {(note[it.matchId] || it.changeCount > 0) && (
                     <p className="mt-1.5 text-[11px] text-danger">
                       {note[it.matchId] ?? `Changed ×${it.changeCount} (−${it.changeCount * 2} pts)`}

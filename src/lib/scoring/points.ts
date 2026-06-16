@@ -26,6 +26,7 @@ export const POINTS = {
   // futures
   groupWinner: 10, // correctly predicted a group winner
   knockoutWinner: 8, // correctly predicted a knockout match winner
+  winMethod: 4, // correctly predicted 90' / ET / penalties
   changePenalty: 2, // deducted each time you change a futures pick
 } as const;
 
