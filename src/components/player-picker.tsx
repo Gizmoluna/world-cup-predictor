@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,15 +40,81 @@ export function PlayerPicker({
   placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
+
   const sorted = useMemo(
     () => [...players].sort((a, b) => scoreRank(a.position) - scoreRank(b.position) || a.name.localeCompare(b.name)),
     [players],
   );
   const selected = players.find((p) => p.id === value);
 
+  // Anchor the portal menu to the button, recomputed on open. Position with
+  // `fixed` so no ancestor's overflow/blur/transform can clip or cover it.
+  useLayoutEffect(() => {
+    if (!open || !btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    setRect({ top: r.bottom, left: r.left, width: r.width });
+  }, [open]);
+
+  // Close (rather than chase the button) on scroll/resize.
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
+
+  const menu =
+    open && rect && typeof document !== "undefined"
+      ? createPortal(
+          <>
+            {/* click-away backdrop */}
+            <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
+            <div
+              className="fixed z-[100] max-h-64 overflow-y-auto rounded-xl border border-border bg-surface shadow-2xl"
+              style={{
+                top: Math.min(rect.top + 4, (typeof window !== "undefined" ? window.innerHeight : 800) - 280),
+                left: rect.left,
+                width: rect.width,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => { onChange(""); setOpen(false); }}
+                className="flex w-full items-center px-4 py-2.5 text-left text-sm text-muted hover:bg-white/5"
+              >
+                — None —
+              </button>
+              {sorted.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => { onChange(p.id); setOpen(false); }}
+                  className={cn(
+                    "flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-white/5",
+                    value === p.id && "bg-[var(--accent-soft)]",
+                  )}
+                >
+                  <Flag url={p.flagUrl} />
+                  <span className="truncate font-semibold">{p.name}</span>
+                  {p.position && <span className="ml-auto shrink-0 text-[10px] uppercase text-muted">{p.position}</span>}
+                </button>
+              ))}
+            </div>
+          </>,
+          document.body,
+        )
+      : null;
+
   return (
     <div className="relative">
       <button
+        ref={btnRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="flex h-12 w-full items-center gap-2 rounded-xl border border-border bg-surface-2 px-4 text-left text-base outline-none focus:border-[var(--accent)]"
@@ -62,33 +129,7 @@ export function PlayerPicker({
         )}
         <ChevronDown size={18} className="ml-auto shrink-0 text-muted" />
       </button>
-
-      {open && (
-        <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-border bg-surface shadow-2xl">
-          <button
-            type="button"
-            onClick={() => { onChange(""); setOpen(false); }}
-            className="flex w-full items-center px-4 py-2.5 text-left text-sm text-muted hover:bg-white/5"
-          >
-            — None —
-          </button>
-          {sorted.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => { onChange(p.id); setOpen(false); }}
-              className={cn(
-                "flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-white/5",
-                value === p.id && "bg-[var(--accent-soft)]",
-              )}
-            >
-              <Flag url={p.flagUrl} />
-              <span className="truncate font-semibold">{p.name}</span>
-              {p.position && <span className="ml-auto shrink-0 text-[10px] uppercase text-muted">{p.position}</span>}
-            </button>
-          ))}
-        </div>
-      )}
+      {menu}
     </div>
   );
 }
