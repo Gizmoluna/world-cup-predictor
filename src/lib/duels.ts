@@ -150,3 +150,75 @@ export async function getDuelBalance(userId: string): Promise<number> {
   }
   return bal;
 }
+
+export interface LedgerMember {
+  userId: string;
+  net: number; // overall winnings (+) or debts (−) across settled duels
+  won: number; // total $ won
+  lost: number; // total $ lost
+  pending: number; // $ riding on accepted-but-unsettled duels
+}
+
+export interface LedgerDebt {
+  fromId: string; // owes
+  toId: string; // owed
+  amount: number; // net amount owed between this pair
+}
+
+export interface LeagueLedger {
+  members: LedgerMember[];
+  debts: LedgerDebt[]; // simplified "who owes whom" (net per pair)
+}
+
+/**
+ * Per-league winnings & debts ledger. Looks only at duels between the given
+ * member ids, resolves each settled one, and computes both per-member totals
+ * and the net amount owed between every pair (so the group can settle up).
+ */
+export async function getLeagueLedger(memberIds: string[]): Promise<LeagueLedger> {
+  const idSet = new Set(memberIds);
+  const all = (await getAllDuels()).filter(
+    (d) => d.status === "accepted" && idSet.has(d.challengerId) && idSet.has(d.opponentId),
+  );
+
+  const member = new Map<string, LedgerMember>(
+    memberIds.map((id) => [id, { userId: id, net: 0, won: 0, lost: 0, pending: 0 }]),
+  );
+  // pairKey "a|b" (sorted) -> net owed to the *first* id in the key.
+  const pair = new Map<string, number>();
+  const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+  for (const d of all) {
+    const o = await resolveDuel(d);
+    const a = member.get(d.challengerId)!;
+    const b = member.get(d.opponentId)!;
+    if (!o.settled) {
+      a.pending += d.stake;
+      b.pending += d.stake;
+      continue;
+    }
+    if (!o.winnerId) continue; // push — no money moves
+    const loserId = o.winnerId === d.challengerId ? d.opponentId : d.challengerId;
+    member.get(o.winnerId)!.won += d.stake;
+    member.get(o.winnerId)!.net += d.stake;
+    member.get(loserId)!.lost += d.stake;
+    member.get(loserId)!.net -= d.stake;
+
+    const key = pairKey(o.winnerId, loserId);
+    const first = key.split("|")[0];
+    // positive = net owed TO `first`. Winner is owed by loser.
+    pair.set(key, (pair.get(key) ?? 0) + (o.winnerId === first ? d.stake : -d.stake));
+  }
+
+  const debts: LedgerDebt[] = [];
+  for (const [key, net] of pair) {
+    if (net === 0) continue;
+    const [first, second] = key.split("|");
+    // net > 0: `first` is owed → `second` owes `first`.
+    if (net > 0) debts.push({ fromId: second, toId: first, amount: net });
+    else debts.push({ fromId: first, toId: second, amount: -net });
+  }
+  debts.sort((x, y) => y.amount - x.amount);
+
+  return { members: [...member.values()].sort((x, y) => y.net - x.net), debts };
+}

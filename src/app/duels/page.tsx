@@ -1,15 +1,18 @@
-import { requireUser } from "@/lib/session";
+import { requireUser, getActiveLeague } from "@/lib/session";
 import { getUsers } from "@/lib/data";
-import { getUserDuels, resolveDuel, getDuelBalance } from "@/lib/duels";
+import { getLeagueMembers } from "@/lib/leagues";
+import { getUserDuels, resolveDuel, getDuelBalance, getLeagueLedger } from "@/lib/duels";
 import { getProvider } from "@/lib/football-api/provider";
 import { chrome } from "@/lib/display";
 import { AppShell } from "@/components/app-shell";
 import { DuelsPanel } from "@/components/duels-panel";
+import { LedgerPanel } from "@/components/ledger-panel";
 
 export const dynamic = "force-dynamic";
 
 export default async function DuelsPage() {
   const user = await requireUser();
+  const league = await getActiveLeague(user.id);
   const [duels, users, matches, balance] = await Promise.all([
     getUserDuels(user.id),
     getUsers(),
@@ -18,6 +21,25 @@ export default async function DuelsPage() {
   ]);
   const userById = new Map(users.map((u) => [u.id, u]));
   const teamShort = (id: string) => matches.find((m) => m.id === id);
+
+  // League winnings & debts ledger (scoped to the active league's members).
+  const members = league ? await getLeagueMembers(league.id) : [user];
+  const ledger = await getLeagueLedger(members.map((m) => m.id));
+  const ledgerMembers = ledger.members.map((m) => {
+    const u = userById.get(m.userId);
+    return { ...m, name: u?.name ?? m.userId, flag: u ? chrome(u).flag : "⚽" };
+  });
+  const ledgerDebts = ledger.debts.map((d) => {
+    const f = userById.get(d.fromId);
+    const t = userById.get(d.toId);
+    return {
+      fromName: f?.name ?? d.fromId,
+      fromFlag: f ? chrome(f).flag : "⚽",
+      toName: t?.name ?? d.toId,
+      toFlag: t ? chrome(t).flag : "⚽",
+      amount: d.amount,
+    };
+  });
 
   const rows = await Promise.all(
     duels.map(async (d) => {
@@ -53,6 +75,12 @@ export default async function DuelsPage() {
           {balance >= 0 ? "+" : "−"}${Math.abs(balance)}
         </span>
       </div>
+      {league && (
+        <div className="mb-5">
+          <LedgerPanel members={ledgerMembers} debts={ledgerDebts} />
+        </div>
+      )}
+
       <DuelsPanel rows={rows} />
     </AppShell>
   );
