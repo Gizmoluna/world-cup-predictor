@@ -53,12 +53,12 @@ export async function getUserLeagues(userId: string): Promise<League[]> {
     return [...demoLeagues.values()].filter((l) => demoMembers.get(l.id)?.has(userId));
   }
   const sb = createServiceClient();
-  const { data } = await sb
-    .from("league_members")
-    .select("leagues(*)")
-    .eq("user_id", userId);
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  return (data ?? []).map((r: any) => rowToLeague(r.leagues));
+  // Two-step (no FK embed needed): membership rows → fetch those leagues.
+  const { data: rows } = await sb.from("league_members").select("league_id").eq("user_id", userId);
+  const ids = (rows ?? []).map((r: { league_id: string }) => r.league_id);
+  if (ids.length === 0) return [];
+  const { data } = await sb.from("leagues").select("*").in("id", ids);
+  return (data ?? []).map(rowToLeague);
 }
 
 export async function getLeague(id: string): Promise<League | null> {
