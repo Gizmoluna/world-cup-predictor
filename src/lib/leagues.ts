@@ -150,17 +150,18 @@ export async function getDiscoverableLeagues(userId: string): Promise<League[]> 
   return all.filter((l) => !mine.has(l.id));
 }
 
-export async function requestToJoin(leagueId: string, userId: string): Promise<{ ok: boolean }> {
-  if (await isMember(leagueId, userId)) return { ok: false };
+export async function requestToJoin(leagueId: string, userId: string): Promise<{ ok: boolean; error?: string }> {
+  if (await isMember(leagueId, userId)) return { ok: true };
   if (!isSupabaseConfigured()) {
     if (!demoRequests.has(leagueId)) demoRequests.set(leagueId, new Set());
     demoRequests.get(leagueId)!.add(userId);
     return { ok: true };
   }
   const sb = createServiceClient();
-  await sb
+  const { error } = await sb
     .from("join_requests")
     .upsert({ league_id: leagueId, user_id: userId, status: "pending" }, { onConflict: "league_id,user_id" });
+  if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
 

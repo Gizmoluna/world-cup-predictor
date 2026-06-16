@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { InviteShare } from "./invite-share";
 import { DeleteLeagueButton } from "./delete-league-button";
+import { FriendButton } from "./friend-button";
 import {
   createLeagueAction,
   joinLeagueAction,
@@ -37,14 +38,22 @@ interface DiscoverRow {
   memberCount: number;
   requested: boolean;
 }
+interface PlayerRow {
+  id: string;
+  name: string;
+  flag: string;
+  state: "friends" | "incoming" | "outgoing" | "none";
+}
 
 export function LeaguesPanel({
   leagues,
   discover,
+  players = [],
   isAdmin = false,
 }: {
   leagues: LeagueRow[];
   discover: DiscoverRow[];
+  players?: PlayerRow[];
   isAdmin?: boolean;
 }) {
   const router = useRouter();
@@ -80,7 +89,13 @@ export function LeaguesPanel({
 
   function requestJoin(id: string) {
     setBusyId(id);
-    start(async () => { await requestJoinAction(id); setBusyId(null); refresh(); });
+    setMsg(null);
+    start(async () => {
+      const r = await requestJoinAction(id);
+      setBusyId(null);
+      if (r.ok) refresh();
+      else setMsg({ ok: false, text: r.error ?? "Couldn't send request." });
+    });
   }
   function approve(leagueId: string, userId: string) {
     setBusyId(userId);
@@ -171,6 +186,20 @@ export function LeaguesPanel({
                     <DeleteLeagueButton leagueId={d.id} name={d.name} />
                   </div>
                 )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {players.length > 0 && (
+        <section className="glass p-4">
+          <h2 className="mb-3 text-sm font-bold">Find players · add friends</h2>
+          <div className="flex flex-col gap-2">
+            {players.map((p) => (
+              <div key={p.id} className="flex items-center justify-between gap-2 rounded-xl bg-surface-2 px-3 py-2">
+                <span className="truncate text-sm font-bold">{p.flag} {p.name}</span>
+                <FriendButton targetId={p.id} state={p.state} />
               </div>
             ))}
           </div>

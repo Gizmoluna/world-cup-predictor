@@ -8,6 +8,7 @@ import {
   getAllLeagues,
 } from "@/lib/leagues";
 import { getUser, getUsers } from "@/lib/data";
+import { getFriendStateMap } from "@/lib/friends";
 import { chrome } from "@/lib/display";
 import { isAdmin } from "@/lib/constants";
 import { AppShell } from "@/components/app-shell";
@@ -58,7 +59,14 @@ export default async function LeaguesPage() {
     })),
   );
 
-  const [allUsers, allLeagues] = await Promise.all([getUsers(), getAllLeagues()]);
+  const [allUsers, allLeagues, stateMap] = await Promise.all([
+    getUsers(),
+    getAllLeagues(),
+    getFriendStateMap(user.id),
+  ]);
+  const players = allUsers
+    .filter((u) => u.id !== user.id)
+    .map((u) => ({ id: u.id, name: u.name, flag: chrome(u).flag, state: stateMap.get(u.id) ?? "none" }));
 
   return (
     <AppShell>
@@ -70,7 +78,7 @@ export default async function LeaguesPage() {
         {allUsers.length} player{allUsers.length === 1 ? "" : "s"} · {allLeagues.length} league
         {allLeagues.length === 1 ? "" : "s"}
       </p>
-      <LeaguesPanel leagues={withCounts} discover={discover} isAdmin={isAdmin(user.id)} />
+      <LeaguesPanel leagues={withCounts} discover={discover} players={players} isAdmin={isAdmin(user.id)} />
     </AppShell>
   );
 }

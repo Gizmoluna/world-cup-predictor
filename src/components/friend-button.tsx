@@ -11,9 +11,15 @@ type State = "friends" | "incoming" | "outgoing" | "none";
 export function FriendButton({ targetId, state }: { targetId: string; state: State }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [err, setErr] = useState<string | null>(null);
 
   function add() {
-    start(async () => { await addFriendAction(targetId); router.refresh(); });
+    setErr(null);
+    start(async () => {
+      const r = await addFriendAction(targetId);
+      if (r.ok) router.refresh();
+      else setErr(r.error ?? "Failed");
+    });
   }
   function accept() {
     start(async () => { await acceptFriendAction(targetId); router.refresh(); });
@@ -41,8 +47,11 @@ export function FriendButton({ targetId, state }: { targetId: string; state: Sta
     );
   }
   return (
-    <Button variant="outline" size="sm" disabled={pending} onClick={add}>
-      <UserPlus size={16} /> Add friend
-    </Button>
+    <span className="flex flex-col items-end gap-1">
+      <Button variant="outline" size="sm" disabled={pending} onClick={add}>
+        <UserPlus size={16} /> Add friend
+      </Button>
+      {err && <span className="text-[10px] font-bold text-danger">{err}</span>}
+    </span>
   );
 }

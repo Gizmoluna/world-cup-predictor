@@ -28,7 +28,7 @@ function findPair(rows: Row[], a: string, b: string): Row | undefined {
   return rows.find((r) => (r.from === a && r.to === b) || (r.from === b && r.to === a));
 }
 
-export async function sendFriendRequest(from: string, to: string): Promise<{ ok: boolean }> {
+export async function sendFriendRequest(from: string, to: string): Promise<{ ok: boolean; error?: string }> {
   if (from === to) return { ok: false };
   const rows = await all();
   const existing = findPair(rows, from, to);
@@ -43,10 +43,11 @@ export async function sendFriendRequest(from: string, to: string): Promise<{ ok:
     return { ok: true };
   }
   const sb = createServiceClient();
-  await sb.from("friend_requests").upsert(
+  const { error } = await sb.from("friend_requests").upsert(
     { from_user: from, to_user: to, status: "pending" },
     { onConflict: "from_user,to_user" },
   );
+  if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
 
@@ -90,6 +91,18 @@ export async function getFriendIds(userId: string): Promise<string[]> {
 export async function getIncomingRequests(userId: string): Promise<string[]> {
   const rows = await all();
   return rows.filter((r) => r.to === userId && r.status === "pending").map((r) => r.from);
+}
+
+/** One-pass map of this user's relationship to everyone they have a row with. */
+export async function getFriendStateMap(userId: string): Promise<Map<string, FriendState>> {
+  const rows = await all();
+  const map = new Map<string, FriendState>();
+  for (const r of rows) {
+    if (r.from !== userId && r.to !== userId) continue;
+    const other = r.from === userId ? r.to : r.from;
+    map.set(other, r.status === "accepted" ? "friends" : r.from === userId ? "outgoing" : "incoming");
+  }
+  return map;
 }
 
 export async function friendState(me: string, other: string): Promise<FriendState> {

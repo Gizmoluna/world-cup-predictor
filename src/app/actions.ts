@@ -209,7 +209,8 @@ export async function joinLeagueAction(code: string) {
 export async function requestJoinAction(leagueId: string) {
   const userId = await getSessionUserId();
   if (!userId) return { ok: false as const, error: "Not signed in" };
-  await requestToJoin(leagueId, userId);
+  const res = await requestToJoin(leagueId, userId);
+  if (!res.ok) return { ok: false as const, error: res.error ?? "Could not send request." };
   revalidatePath("/leagues");
   return { ok: true as const };
 }
@@ -258,7 +259,8 @@ export async function deleteLeagueAction(leagueId: string) {
 export async function addFriendAction(targetId: string) {
   const userId = await getSessionUserId();
   if (!userId) return { ok: false as const, error: "Not signed in" };
-  await sendFriendRequest(userId, targetId);
+  const res = await sendFriendRequest(userId, targetId);
+  if (!res.ok) return { ok: false as const, error: res.error ?? "Could not send friend request." };
   revalidatePath(`/profile/${targetId}`);
   revalidatePath(`/profile/${userId}`);
   return { ok: true as const };
