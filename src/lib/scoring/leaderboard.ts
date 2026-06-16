@@ -5,7 +5,29 @@
 // so it's unit-tested directly.
 // ---------------------------------------------------------------------------
 
-import type { AppUser, Match, PredictionScore } from "@/lib/types";
+import type { AppUser, Match, PredictionScore, Standing } from "@/lib/types";
+
+/**
+ * When was each group "decided", as a timestamp (latest kickoff among its
+ * group-stage matches)? Used to deny a late joiner futures points for groups
+ * that resolved before they joined. Provider match rows carry no group name —
+ * only standings do — so matches are mapped to a group via their teams. Keys
+ * are the standings group names (e.g. "Group A") so they line up with the
+ * decided-group maps in the read model.
+ */
+export function groupDecisionTimes(standings: Standing[], matches: Match[]): Map<string, number> {
+  const teamGroup = new Map<string, string>();
+  for (const s of standings) teamGroup.set(s.teamId, s.groupName);
+  const out = new Map<string, number>();
+  for (const m of matches) {
+    if (m.stage !== "group") continue;
+    const g = teamGroup.get(m.homeTeamId) ?? teamGroup.get(m.awayTeamId);
+    if (!g) continue;
+    const t = new Date(m.kickoffAt).getTime();
+    out.set(g, Math.max(out.get(g) ?? 0, t));
+  }
+  return out;
+}
 
 export interface ScoredMatch {
   match: Match;

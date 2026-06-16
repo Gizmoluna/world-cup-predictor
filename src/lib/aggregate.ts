@@ -25,7 +25,7 @@ import { getAllGroupOrders, scoreGroupOrder } from "@/lib/group-orders";
 import { buildMatchResult } from "@/lib/scoring/buildMatchResult";
 import { calculatePredictionScore } from "@/lib/scoring/calculatePredictionScore";
 import { POINTS } from "@/lib/scoring/points";
-import { buildLeaderboard, type ScoredMatch, type LeaderboardRow } from "@/lib/scoring/leaderboard";
+import { buildLeaderboard, groupDecisionTimes, type ScoredMatch, type LeaderboardRow } from "@/lib/scoring/leaderboard";
 import type { Standing } from "@/lib/types";
 
 // Re-exported so existing callers keep importing these from "@/lib/aggregate".
@@ -165,16 +165,11 @@ export async function getReadModel(opts?: {
     }
   }
 
-  // When was each group decided? Approximate by the latest kickoff among its
-  // matches — used to deny a late joiner futures points that resolved before
-  // they joined the league (no points carried into a group).
-  const groupDecidedAt = new Map<string, number>();
-  for (const m of matches) {
-    if (m.stage === "group" && m.groupName) {
-      const t = new Date(m.kickoffAt).getTime();
-      groupDecidedAt.set(m.groupName, Math.max(groupDecidedAt.get(m.groupName) ?? 0, t));
-    }
-  }
+  // When was each group decided? (latest kickoff among its matches) — used to
+  // deny a late joiner futures points that resolved before they joined. Provider
+  // match rows carry no group name, so this maps matches → group via teams; see
+  // groupDecisionTimes. Keys ("Group A") line up with decidedGroupWinners/Order.
+  const groupDecidedAt = groupDecisionTimes(standings, matches);
 
   // Who actually engaged with futures (so loyalty only rewards real players).
   const madeFutures = new Set<string>();

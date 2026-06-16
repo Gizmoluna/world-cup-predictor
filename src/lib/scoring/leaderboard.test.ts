@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildLeaderboard, type ScoredMatch } from "./leaderboard";
-import type { AppUser, Match, PredictionScore } from "@/lib/types";
+import { buildLeaderboard, groupDecisionTimes, type ScoredMatch } from "./leaderboard";
+import type { AppUser, Match, PredictionScore, Standing } from "@/lib/types";
 
 function user(id: string): AppUser {
   return { id, name: id, theme: "gold" };
@@ -122,6 +122,35 @@ describe("buildLeaderboard — join-date eligibility (no carry-in)", () => {
   it("no eligibility map = everything counts", () => {
     const board = buildLeaderboard([A], [scored("m", "2026-06-01T00:00:00Z", [score("a", { totalPoints: 7 })], "a")]);
     expect(board[0].points).toBe(7);
+  });
+});
+
+describe("groupDecisionTimes — maps matches to groups via teams", () => {
+  function gMatch(id: string, home: string, away: string, kickoff: string, stage = "group"): Match {
+    return { id, homeTeamId: home, awayTeamId: away, kickoffAt: kickoff, status: "full_time", stage } as Match;
+  }
+  const standings: Standing[] = [
+    { teamId: "t1", groupName: "Group A" } as Standing,
+    { teamId: "t2", groupName: "Group A" } as Standing,
+    { teamId: "t3", groupName: "Group B" } as Standing,
+    { teamId: "t4", groupName: "Group B" } as Standing,
+  ];
+
+  it("keys by standings group name even though matches carry none", () => {
+    const times = groupDecisionTimes(standings, [
+      gMatch("a1", "t1", "t2", "2026-06-01T00:00:00Z"),
+      gMatch("a2", "t1", "t2", "2026-06-05T00:00:00Z"), // later A match
+      gMatch("b1", "t3", "t4", "2026-06-03T00:00:00Z"),
+    ]);
+    expect(times.get("Group A")).toBe(new Date("2026-06-05T00:00:00Z").getTime());
+    expect(times.get("Group B")).toBe(new Date("2026-06-03T00:00:00Z").getTime());
+  });
+
+  it("ignores knockout matches", () => {
+    const times = groupDecisionTimes(standings, [
+      gMatch("ko", "t1", "t3", "2026-07-01T00:00:00Z", "round_of_16"),
+    ]);
+    expect(times.size).toBe(0);
   });
 });
 
