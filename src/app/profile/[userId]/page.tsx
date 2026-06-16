@@ -13,8 +13,10 @@ import { FriendButton } from "@/components/friend-button";
 import { FriendRequests } from "@/components/friend-requests";
 import { LevelBar } from "@/components/level-bar";
 import { AchievementsGrid } from "@/components/achievements-grid";
+import { PickHistory, type PickRow } from "@/components/pick-history";
 import { computeAchievements } from "@/lib/achievements";
 import { THEMES, DEFAULT_THEME, rival } from "@/lib/constants";
+import { isLocked } from "@/lib/time";
 import { chrome } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
@@ -98,6 +100,43 @@ export default async function ProfilePage({
   const incoming = (await Promise.all(incomingIds.map((id) => getUser(id))))
     .filter((u): u is NonNullable<typeof u> => Boolean(u))
     .map((u) => ({ id: u.id, name: u.name, flag: chrome(u).flag }));
+
+  // Pick history — this player's match predictions. On someone else's profile,
+  // upcoming picks stay hidden until kickoff (anti-copying); locked/finished are
+  // shown with the result + points. On your own profile everything shows.
+  const matchById = new Map(model.matches.map((m) => [m.id, m]));
+  const nowIso = new Date().toISOString();
+  const pickHistory: PickRow[] = model.predictions
+    .filter((p) => p.userId === user.id)
+    .map((p) => {
+      const m = matchById.get(p.matchId);
+      if (!m) return null;
+      const locked = isLocked(m.kickoffAt, new Date());
+      const finished = m.status === "full_time";
+      const home = model.teamById.get(m.homeTeamId);
+      const away = model.teamById.get(m.awayTeamId);
+      const score = model.scoresByMatch.get(m.id)?.find((s) => s.userId === user.id);
+      const scorer = p.firstGoalScorerId ? model.playerById.get(p.firstGoalScorerId) : undefined;
+      return {
+        matchId: m.id,
+        home: home?.shortName ?? home?.name ?? m.homeTeamId,
+        away: away?.shortName ?? away?.name ?? m.awayTeamId,
+        homeFlag: home?.flagUrl ?? "",
+        awayFlag: away?.flagUrl ?? "",
+        kickoff: m.kickoffAt,
+        status: m.status,
+        predHome: p.predictedHomeScore ?? null,
+        predAway: p.predictedAwayScore ?? null,
+        scorerName: scorer?.name ?? null,
+        actual: finished ? `${m.homeScore}-${m.awayScore}` : null,
+        points: finished && score ? score.totalPoints : null,
+        // Conceal an upcoming pick unless it's your own profile.
+        hidden: !isSelf && !locked && !finished,
+      } as PickRow;
+    })
+    .filter((r): r is PickRow => Boolean(r))
+    .sort((a, b) => +new Date(b.kickoff) - +new Date(a.kickoff))
+    .slice(0, 30);
 
   return (
     <AppShell>
@@ -192,6 +231,19 @@ export default async function ProfilePage({
               {bootPlayer ? bootPlayer.name : <span className="text-muted">Not set</span>}
             </PickRow>
           </div>
+        </Card>
+
+        {/* Pick history */}
+        <Card className="flex flex-col gap-3">
+          <CardTitle>{isSelf ? "Your picks" : `${user.name}'s picks`}</CardTitle>
+          <PickHistory
+            rows={pickHistory}
+            emptyNote={
+              isSelf
+                ? "No predictions yet — head to Matches and make your first pick."
+                : `${user.name} hasn't made any predictions yet.`
+            }
+          />
         </Card>
 
         {/* Level / XP */}
