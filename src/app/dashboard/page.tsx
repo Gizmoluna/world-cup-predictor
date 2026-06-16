@@ -10,6 +10,7 @@ import { HeroMatch } from "@/components/hero-match";
 import { LevelBar } from "@/components/level-bar";
 import { StreakBadge } from "@/components/streak-badge";
 import { CelebrateProgress } from "@/components/celebrate-progress";
+import { LiveRefresher } from "@/components/live-refresher";
 import { Card, CardTitle } from "@/components/ui/card";
 import { computeAchievements } from "@/lib/achievements";
 import { rankProgress } from "@/lib/constants";
@@ -78,8 +79,11 @@ export default async function DashboardPage() {
     .map((a) => ({ id: a.id, name: a.name, icon: a.icon }));
   const lvl = rankProgress(me?.points ?? 0);
 
+  const hasLive = model.matches.some((m) => m.status === "live");
+
   return (
     <AppShell>
+      <LiveRefresher active={hasLive} />
       <CelebrateProgress earnedBadges={earnedBadges} level={lvl.level} levelTitle={lvl.title} />
       <div className="flex flex-col gap-5">
         <div>

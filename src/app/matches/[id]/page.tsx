@@ -15,6 +15,7 @@ import { MatchTimeline } from "@/components/match-timeline";
 import { PredictionSummary } from "@/components/prediction-summary";
 import { ShareResult } from "@/components/share-result";
 import { DuelChallenge } from "@/components/duel-challenge";
+import { LiveRefresher } from "@/components/live-refresher";
 import { GroupPots, type PotView } from "@/components/group-pots";
 import { getMatchPots, getPotEntries, resolvePot } from "@/lib/pots";
 import { getFriendIds } from "@/lib/friends";
@@ -132,6 +133,7 @@ export default async function MatchPage({
 
   return (
     <AppShell>
+      <LiveRefresher active={live} />
       {gotResult && <Confetti dedupeKey={`${id}-${user.id}`} big={bigWin} sound />}
 
       <div className="glass mb-4 p-5">

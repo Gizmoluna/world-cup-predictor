@@ -94,7 +94,8 @@ export class EspnProvider implements FootballProvider {
   }
 
   async getMatches(): Promise<Match[]> {
-    const data = await getJson<any>(`${BASE}/scoreboard?dates=${DATE_RANGE}&limit=400`);
+    // 30s cache so live in-app refreshes pull fresh scores without hammering ESPN.
+    const data = await getJson<any>(`${BASE}/scoreboard?dates=${DATE_RANGE}&limit=400`, 30);
     const events = data?.events ?? [];
     return events.map(mapEvent).filter(Boolean) as Match[];
   }
@@ -104,7 +105,7 @@ export class EspnProvider implements FootballProvider {
   }
 
   async getMatchEvents(matchId: string): Promise<MatchEvent[]> {
-    const data = await getJson<any>(`${BASE}/summary?event=${matchId}`);
+    const data = await getJson<any>(`${BASE}/summary?event=${matchId}`, 30);
     const key = data?.keyEvents ?? [];
     const out: MatchEvent[] = [];
     key.forEach((e: any, i: number) => {

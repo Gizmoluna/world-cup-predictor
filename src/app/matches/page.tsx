@@ -6,6 +6,7 @@ import { getReadModel } from "@/lib/aggregate";
 import { AppShell } from "@/components/app-shell";
 import { MatchFilter } from "@/components/match-filter";
 import { TournamentHub } from "@/components/tournament-hub";
+import { LiveRefresher } from "@/components/live-refresher";
 import { chrome } from "@/lib/display";
 
 export const dynamic = "force-dynamic";
@@ -34,8 +35,11 @@ export default async function MatchesPage() {
     new Set(model.matches.map((m) => m.groupName).filter(Boolean) as string[]),
   ).sort();
 
+  const hasLive = model.matches.some((m) => m.status === "live");
+
   return (
     <AppShell>
+      <LiveRefresher active={hasLive} />
       <div className="mb-4 flex items-center justify-between">
         <h1 className="title-bc text-3xl">Match Centre</h1>
         <Link
