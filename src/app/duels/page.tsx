@@ -58,6 +58,8 @@ export default async function DuelsPage() {
         settled: o.settled,
         won: o.settled && o.winnerId === user.id,
         push: o.settled && !o.winnerId,
+        net: o.settled ? (d.challengerId === user.id ? o.challengerNet : -o.challengerNet) : 0,
+        mode: o.mode,
         actual: o.actual,
         myGuess: d.challengerId === user.id ? o.challengerGuess : o.opponentGuess,
         theirGuess: d.challengerId === user.id ? o.opponentGuess : o.challengerGuess,
@@ -68,7 +70,7 @@ export default async function DuelsPage() {
   return (
     <AppShell>
       <h1 className="title-bc text-3xl">Duels ⚔️💵</h1>
-      <p className="mb-3 text-sm text-muted">Bet a friend on the 90-minute score. Closest scoreline wins the pot.</p>
+      <p className="mb-3 text-sm text-muted">Bet a rival — full stake on the 90′ score, or split it across score, result &amp; first scorer.</p>
       <div className="glass card-bc mb-4 flex items-center justify-between p-4">
         <span className="title-bc text-sm text-muted">Your duel bankroll</span>
         <span className={`num-bc text-3xl ${balance >= 0 ? "text-pitch" : "text-danger"}`}>

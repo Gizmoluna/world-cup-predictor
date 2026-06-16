@@ -209,6 +209,7 @@ create table if not exists wager_duels (
   opponent_id text not null,
   stake int not null default 10,
   status text not null default 'pending',
+  mode text not null default 'SCORE',
   created_at timestamptz not null default now()
 );
 

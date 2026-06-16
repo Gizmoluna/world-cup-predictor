@@ -17,9 +17,13 @@ export function DuelChallenge({ matchId, friends }: { matchId: string; friends: 
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [opp, setOpp] = useState(friends[0]?.id ?? "");
-  const [stake, setStake] = useState(20);
+  const [stake, setStake] = useState(30);
+  const [mode, setMode] = useState<"SCORE" | "SPLIT">("SCORE");
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // SPLIT divides the stake three ways — snap to a multiple of 3 for clean legs.
+  const effectiveStake = mode === "SPLIT" ? Math.max(3, Math.round(stake / 3) * 3) : stake;
+  const legShare = Math.floor(effectiveStake / 3);
 
   if (friends.length === 0) {
     return (
@@ -32,7 +36,7 @@ export function DuelChallenge({ matchId, friends }: { matchId: string; friends: 
   function challenge() {
     setMsg(null);
     start(async () => {
-      const res = await challengeFriendAction(matchId, opp, stake);
+      const res = await challengeFriendAction(matchId, opp, effectiveStake, mode);
       if (res.ok) {
         setMsg({ ok: true, text: "Challenge sent! 💵" });
         setOpen(false);
@@ -60,12 +64,39 @@ export function DuelChallenge({ matchId, friends }: { matchId: string; friends: 
               <option key={f.id} value={f.id}>{f.flag} {f.name}</option>
             ))}
           </select>
+
+          {/* Wager mode: full stake on the score, or split across markets. */}
+          <div className="grid grid-cols-2 gap-1.5">
+            {([
+              { key: "SCORE", label: "Full · correct score" },
+              { key: "SPLIT", label: "Split · across markets" },
+            ] as const).map((m) => (
+              <button
+                key={m.key}
+                onClick={() => setMode(m.key)}
+                className={cn(
+                  "rounded-lg px-2 py-2 text-[11px] font-bold transition active:scale-95",
+                  mode === m.key ? "bg-[var(--accent)] text-black" : "bg-white/8",
+                )}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted">
+            {mode === "SCORE"
+              ? "Whole stake on the closest 90′ scoreline. Winner takes the pot."
+              : `$${legShare} each on closest score, match result & first scorer — each leg settled on its own.`}
+          </p>
+
           <div className="flex items-center justify-between">
-            <span className="num-bc text-2xl text-pitch">${stake}</span>
-            <span className="text-xs text-muted">winner takes ${stake * 2}</span>
+            <span className="num-bc text-2xl text-pitch">${effectiveStake}</span>
+            <span className="text-xs text-muted">
+              {mode === "SCORE" ? `winner takes $${effectiveStake * 2}` : `3 × $${legShare} legs`}
+            </span>
           </div>
           <input
-            type="range" min={5} max={100} step={5}
+            type="range" min={6} max={99} step={3}
             value={stake}
             onChange={(e) => setStake(Number(e.target.value))}
             className="w-full accent-pitch"

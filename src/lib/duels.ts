@@ -10,6 +10,9 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getProvider } from "@/lib/football-api/provider";
 import { getUserPrediction } from "@/lib/data";
+import { buildMatchResult } from "@/lib/scoring/buildMatchResult";
+import { settleDuel, type DuelMode, type DuelLeg } from "@/lib/scoring/duel-settle";
+import type { PotGuess, PotActual } from "@/lib/scoring/pots-settle";
 
 const demo: WagerDuel[] = [];
 
@@ -22,6 +25,7 @@ function rowToDuel(r: any): WagerDuel {
     opponentId: r.opponent_id,
     stake: r.stake,
     status: r.status,
+    mode: r.mode === "SPLIT" ? "SPLIT" : "SCORE",
     createdAt: r.created_at,
   };
 }
@@ -46,6 +50,7 @@ export async function createDuel(
   challengerId: string,
   opponentId: string,
   stake: number,
+  mode: DuelMode = "SCORE",
 ): Promise<{ ok: boolean; error?: string }> {
   if (challengerId === opponentId) return { ok: false, error: "Pick a friend." };
   const all = await getAllDuels();
@@ -60,9 +65,11 @@ export async function createDuel(
   ) {
     return { ok: false, error: "You already have a duel with them on this match." };
   }
-  const s = Math.max(1, Math.min(100, Math.round(stake)));
+  // SPLIT divides the stake three ways, so keep it a clean multiple of 3.
+  let s = Math.max(1, Math.min(100, Math.round(stake)));
+  if (mode === "SPLIT") s = Math.max(3, Math.round(s / 3) * 3);
   if (!isSupabaseConfigured()) {
-    demo.push({ id: randomUUID(), matchId, challengerId, opponentId, stake: s, status: "pending" });
+    demo.push({ id: randomUUID(), matchId, challengerId, opponentId, stake: s, status: "pending", mode });
     return { ok: true };
   }
   const sb = createServiceClient();
@@ -72,6 +79,7 @@ export async function createDuel(
     opponent_id: opponentId,
     stake: s,
     status: "pending",
+    mode,
   });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
@@ -95,7 +103,10 @@ export async function setDuelStatus(id: string, userId: string, status: DuelStat
 
 export interface DuelOutcome {
   settled: boolean;
-  winnerId: string | null; // null = tie/push
+  winnerId: string | null; // overall winner (sign of challengerNet); null = level
+  challengerNet: number; // +/− from the challenger's perspective
+  mode: DuelMode;
+  legs: DuelLeg[]; // per-market breakdown (single SCORE leg for full mode)
   actual: string | null; // "2-1"
   challengerGuess: string | null;
   opponentGuess: string | null;
@@ -106,34 +117,55 @@ function guess(p: { predictedHomeScore: number | null; predictedAwayScore: numbe
   return `${p.predictedHomeScore}-${p.predictedAwayScore}`;
 }
 
+function toGuess(uid: string, p: { predictedHomeScore: number | null; predictedAwayScore: number | null; firstGoalScorerId?: string | null } | null): PotGuess {
+  const h = p?.predictedHomeScore ?? null;
+  const a = p?.predictedAwayScore ?? null;
+  const result = h != null && a != null ? (h > a ? "home" : h < a ? "away" : "draw") : null;
+  return { userId: uid, homeScore: h, awayScore: a, result: result as PotGuess["result"], firstScorerId: p?.firstGoalScorerId ?? null };
+}
+
 /**
- * Settle a duel on the closest correct scoreline (full-time / 90 min).
- * Exact beats close; equal closeness pushes; no prediction always loses.
+ * Settle a duel. FULL (SCORE) mode: whole stake on the closest 90' scoreline.
+ * SPLIT mode: stake divided across score / result / first-scorer, each leg
+ * settled independently. Equal closeness / both-right / both-wrong pushes.
  */
 export async function resolveDuel(duel: WagerDuel): Promise<DuelOutcome> {
-  const blank: DuelOutcome = { settled: false, winnerId: null, actual: null, challengerGuess: null, opponentGuess: null };
+  const mode: DuelMode = duel.mode === "SPLIT" ? "SPLIT" : "SCORE";
+  const blank: DuelOutcome = {
+    settled: false, winnerId: null, challengerNet: 0, mode, legs: [], actual: null,
+    challengerGuess: null, opponentGuess: null,
+  };
   if (duel.status !== "accepted") return blank;
   const match = await getProvider().getMatch(duel.matchId);
   if (!match || match.status !== "full_time" || match.homeScore == null || match.awayScore == null) return blank;
-  const ah = match.homeScore;
-  const aa = match.awayScore;
+
   const [cp, op] = await Promise.all([
     getUserPrediction(duel.challengerId, duel.matchId),
     getUserPrediction(duel.opponentId, duel.matchId),
   ]);
-  const dist = (p: typeof cp) =>
-    p && p.predictedHomeScore != null && p.predictedAwayScore != null
-      ? Math.abs(p.predictedHomeScore - ah) + Math.abs(p.predictedAwayScore - aa)
-      : Number.POSITIVE_INFINITY;
-  const cD = dist(cp);
-  const oD = dist(op);
-  let winnerId: string | null = null;
-  if (cD < oD) winnerId = duel.challengerId;
-  else if (oD < cD) winnerId = duel.opponentId;
+
+  // First scorer only matters (and is only fetched) for SPLIT duels.
+  let firstScorerId: string | null = null;
+  if (mode === "SPLIT") {
+    const events = await getProvider().getMatchEvents(duel.matchId);
+    firstScorerId = buildMatchResult(match, events, null).firstGoalScorerId ?? null;
+  }
+  const actual: PotActual = {
+    homeScore: match.homeScore,
+    awayScore: match.awayScore,
+    result: match.homeScore > match.awayScore ? "home" : match.homeScore < match.awayScore ? "away" : "draw",
+    firstScorerId,
+  };
+
+  const s = settleDuel(mode, toGuess(duel.challengerId, cp), toGuess(duel.opponentId, op), actual, duel.stake);
+  const winnerId = s.challengerNet > 0 ? duel.challengerId : s.challengerNet < 0 ? duel.opponentId : null;
   return {
     settled: true,
     winnerId,
-    actual: `${ah}-${aa}`,
+    challengerNet: s.challengerNet,
+    mode,
+    legs: s.legs,
+    actual: `${actual.homeScore}-${actual.awayScore}`,
     challengerGuess: guess(cp),
     opponentGuess: guess(op),
   };
@@ -145,8 +177,8 @@ export async function getDuelBalance(userId: string): Promise<number> {
   let bal = 0;
   for (const d of duels) {
     const o = await resolveDuel(d);
-    if (!o.settled || !o.winnerId) continue;
-    bal += o.winnerId === userId ? d.stake : -d.stake;
+    if (!o.settled) continue;
+    bal += d.challengerId === userId ? o.challengerNet : -o.challengerNet;
   }
   return bal;
 }
@@ -197,17 +229,20 @@ export async function getLeagueLedger(memberIds: string[]): Promise<LeagueLedger
       b.pending += d.stake;
       continue;
     }
-    if (!o.winnerId) continue; // push — no money moves
-    const loserId = o.winnerId === d.challengerId ? d.opponentId : d.challengerId;
-    member.get(o.winnerId)!.won += d.stake;
-    member.get(o.winnerId)!.net += d.stake;
-    member.get(loserId)!.lost += d.stake;
-    member.get(loserId)!.net -= d.stake;
+    if (o.challengerNet === 0) continue; // level — no money moves
+    // challengerNet may be a partial amount (SPLIT duels), so use its magnitude.
+    const amount = Math.abs(o.challengerNet);
+    const winnerId = o.challengerNet > 0 ? d.challengerId : d.opponentId;
+    const loserId = winnerId === d.challengerId ? d.opponentId : d.challengerId;
+    member.get(winnerId)!.won += amount;
+    member.get(winnerId)!.net += amount;
+    member.get(loserId)!.lost += amount;
+    member.get(loserId)!.net -= amount;
 
-    const key = pairKey(o.winnerId, loserId);
+    const key = pairKey(winnerId, loserId);
     const first = key.split("|")[0];
     // positive = net owed TO `first`. Winner is owed by loser.
-    pair.set(key, (pair.get(key) ?? 0) + (o.winnerId === first ? d.stake : -d.stake));
+    pair.set(key, (pair.get(key) ?? 0) + (winnerId === first ? amount : -amount));
   }
 
   const debts: LedgerDebt[] = [];

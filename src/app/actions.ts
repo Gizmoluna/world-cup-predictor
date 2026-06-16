@@ -293,10 +293,15 @@ export async function removeFriendAction(otherId: string) {
 
 // --- friend-vs-friend duels ------------------------------------------------
 
-export async function challengeFriendAction(matchId: string, opponentId: string, stake: number) {
+export async function challengeFriendAction(
+  matchId: string,
+  opponentId: string,
+  stake: number,
+  mode: "SCORE" | "SPLIT" = "SCORE",
+) {
   const userId = await getSessionUserId();
   if (!userId) return { ok: false as const, error: "Not signed in" };
-  const res = await createDuel(matchId, userId, opponentId, stake);
+  const res = await createDuel(matchId, userId, opponentId, stake, mode);
   if (!res.ok) return { ok: false as const, error: res.error ?? "Could not create duel." };
   revalidatePath("/duels");
   revalidatePath(`/matches/${matchId}`);

@@ -234,6 +234,7 @@ export interface WagerDuel {
   opponentId: UserId;
   stake: number;
   status: DuelStatus;
+  mode?: "SCORE" | "SPLIT"; // SCORE = full stake on 90' scoreline; SPLIT = across markets
   createdAt?: string;
 }
 

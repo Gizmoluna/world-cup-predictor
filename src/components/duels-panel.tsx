@@ -17,6 +17,8 @@ interface Row {
   settled: boolean;
   won: boolean;
   push: boolean;
+  net: number; // my net $ (can be partial for split duels)
+  mode: string; // "SCORE" | "SPLIT"
   actual: string | null;
   myGuess: string | null;
   theirGuess: string | null;
@@ -83,14 +85,19 @@ export function DuelsPanel({ rows }: { rows: Row[] }) {
           {results.map((r) => (
             <div key={r.id} className="rounded-xl bg-surface-2 p-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold">{r.otherFlag} {r.otherName}</span>
+                <span className="text-sm font-bold">
+                  {r.otherFlag} {r.otherName}
+                  <span className="ml-1.5 text-[10px] font-bold uppercase text-muted">
+                    {r.mode === "SPLIT" ? "split" : "score"}
+                  </span>
+                </span>
                 <span
                   className={cn(
                     "num-bc text-sm",
-                    r.push ? "text-muted" : r.won ? "text-pitch" : "text-danger",
+                    r.net === 0 ? "text-muted" : r.net > 0 ? "text-pitch" : "text-danger",
                   )}
                 >
-                  {r.push ? "Push" : r.won ? `+$${r.stake}` : `−$${r.stake}`}
+                  {r.net === 0 ? "Push" : r.net > 0 ? `+$${r.net}` : `−$${Math.abs(r.net)}`}
                 </span>
               </div>
               <p className="mt-1 text-[11px] text-muted">

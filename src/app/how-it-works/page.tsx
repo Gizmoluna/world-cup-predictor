@@ -137,9 +137,10 @@ export default function HowItWorksPage() {
               stake.
             </li>
             <li>
-              <span className="font-bold text-fg">Duel a rival:</span> challenge any league member on
-              the 90-minute score. Closest scoreline takes the pot; an exact tie pushes (money back);
-              no prediction always loses.
+              <span className="font-bold text-fg">Duel a rival:</span> challenge any league member.
+              Choose <span className="font-bold">Full</span> — whole stake on the closest 90′ score —
+              or <span className="font-bold">Split</span>, dividing it across closest score, match
+              result and first goalscorer, each leg settled on its own. Ties push (money back).
             </li>
             <li>
               <span className="font-bold text-fg">Group pot:</span> anyone opens a whole-league pot on
