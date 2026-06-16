@@ -32,6 +32,22 @@ export default async function PredictGroupsPage() {
           const t = model.teamById.get(r.teamId);
           return { id: r.teamId, name: t?.shortName ?? t?.name ?? r.teamId, flagUrl: t?.flagUrl ?? "" };
         }),
+      live: [...rows]
+        .sort(
+          (a, b) =>
+            (a.rank || 99) - (b.rank || 99) || b.points - a.points || b.goalDifference - a.goalDifference,
+        )
+        .map((r) => {
+          const t = model.teamById.get(r.teamId);
+          return {
+            teamId: r.teamId,
+            name: t?.shortName ?? t?.name ?? r.teamId,
+            flagUrl: t?.flagUrl ?? "",
+            played: r.played,
+            goalDifference: r.goalDifference,
+            points: r.points,
+          };
+        }),
     }));
 
   return (

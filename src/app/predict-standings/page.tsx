@@ -41,6 +41,17 @@ export default async function PredictStandingsPage() {
           const t = teamById.get(r.teamId);
           return { id: r.teamId, name: t?.shortName ?? t?.name ?? r.teamId, flagUrl: t?.flagUrl ?? "" };
         }),
+        live: ordered.map((r) => {
+          const t = teamById.get(r.teamId);
+          return {
+            teamId: r.teamId,
+            name: t?.shortName ?? t?.name ?? r.teamId,
+            flagUrl: t?.flagUrl ?? "",
+            played: r.played,
+            goalDifference: r.goalDifference,
+            points: r.points,
+          };
+        }),
       };
     });
 

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveGroupOrderPick } from "@/app/actions";
+import { LiveGroupTable, type LiveRow } from "./live-group-table";
 import { cn } from "@/lib/utils";
 
 interface GTeam {
@@ -17,6 +18,7 @@ interface GroupData {
   changeCount?: number;
   penalty?: number;
   teams: GTeam[];
+  live?: LiveRow[];
 }
 
 function Flag({ url }: { url: string }) {
@@ -103,6 +105,13 @@ function GroupRanker({ group }: { group: GroupData }) {
           <button onClick={reset} className="text-[11px] font-bold text-muted">Reset</button>
         )}
       </div>
+
+      {group.live && group.live.length > 0 && (
+        <div className="mb-3">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted">Live table</p>
+          <LiveGroupTable rows={group.live} />
+        </div>
+      )}
 
       {ranked.length > 0 && (
         <div className="mb-2 flex flex-col gap-1.5">

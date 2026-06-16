@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { saveGroupPick } from "@/app/actions";
 import { changePenaltyFor } from "@/lib/scoring/points";
 import { ChangeConfirmBar } from "@/components/change-confirm-bar";
+import { LiveGroupTable, type LiveRow } from "@/components/live-group-table";
 import { cn } from "@/lib/utils";
 
 interface GroupTeam {
@@ -19,6 +20,7 @@ interface GroupData {
   changeCount?: number;
   penalty?: number;
   teams: GroupTeam[];
+  live?: LiveRow[];
 }
 
 export function GroupPicks({ groups }: { groups: GroupData[] }) {
@@ -79,6 +81,12 @@ export function GroupPicks({ groups }: { groups: GroupData[] }) {
                 </span>
               )}
             </div>
+            {g.live && g.live.length > 0 && (
+              <div className="mb-3">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted">Live table</p>
+                <LiveGroupTable rows={g.live} />
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               {g.teams.map((t) => {
                 const isPick = picked === t.id;
