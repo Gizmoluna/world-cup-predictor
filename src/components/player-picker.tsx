@@ -41,6 +41,7 @@ export function PlayerPicker({
 }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const sorted = useMemo(
@@ -57,15 +58,22 @@ export function PlayerPicker({
     setRect({ top: r.bottom, left: r.left, width: r.width });
   }, [open]);
 
-  // Close (rather than chase the button) on scroll/resize.
+  // Close (rather than chase the button) when the PAGE scrolls or resizes — but
+  // NOT when the user scrolls the menu's own list (that's the scrollbar/"slide
+  // bar" inside the dropdown).
   useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("resize", close);
+    const onScroll = (e: Event) => {
+      const t = e.target;
+      if (menuRef.current && t instanceof Node && menuRef.current.contains(t)) return;
+      setOpen(false);
+    };
+    const onResize = () => setOpen(false);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
     return () => {
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
     };
   }, [open]);
 
@@ -76,6 +84,7 @@ export function PlayerPicker({
             {/* click-away backdrop */}
             <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
             <div
+              ref={menuRef}
               className="fixed z-[100] max-h-64 overflow-y-auto rounded-xl border border-border bg-surface shadow-2xl"
               style={{
                 top: Math.min(rect.top + 4, (typeof window !== "undefined" ? window.innerHeight : 800) - 280),
