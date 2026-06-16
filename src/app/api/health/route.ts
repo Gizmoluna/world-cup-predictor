@@ -38,11 +38,15 @@ export async function GET(req: NextRequest) {
   let data: unknown = undefined;
   if (authorized) {
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    const [{ data: users }, { data: preds }, { data: members }] = await Promise.all([
-      sb.from("users").select("id, name"),
-      sb.from("predictions").select("user_id, match_id"),
-      sb.from("league_members").select("user_id, league_id"),
-    ]);
+    const [{ data: users }, { data: preds }, { data: members }, { data: leagues }, { data: friends }, { data: joins }] =
+      await Promise.all([
+        sb.from("users").select("id, name"),
+        sb.from("predictions").select("user_id, match_id"),
+        sb.from("league_members").select("user_id, league_id"),
+        sb.from("leagues").select("id, name, owner_id, invite_code"),
+        sb.from("friend_requests").select("from_user, to_user, status"),
+        sb.from("join_requests").select("league_id, user_id, status"),
+      ]);
     const predCount: Record<string, number> = {};
     for (const p of preds ?? []) predCount[(p as any).user_id] = (predCount[(p as any).user_id] ?? 0) + 1;
     const leaguesByUser: Record<string, string[]> = {};
@@ -55,6 +59,9 @@ export async function GET(req: NextRequest) {
         leagues: leaguesByUser[u.id] ?? [],
       })),
       totalPredictions: (preds ?? []).length,
+      leagues: (leagues ?? []).map((l: any) => ({ id: l.id, name: l.name, owner: l.owner_id, code: l.invite_code })),
+      friendRequests: friends ?? [],
+      joinRequests: joins ?? [],
     };
   }
 
