@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 // Inline "are you sure?" bar shown before a futures pick is changed. Makes the
 // escalating cost explicit BEFORE points are lost, and frames the gamified
 // stakes: the forfeited points are paid out to rivals who hold their nerve.
@@ -27,7 +29,10 @@ export function ChangeConfirmBar({
         {changeNumber > 1 ? ` (change #${changeNumber} — the price climbs each flip)` : ""}.
       </p>
       <p className="mt-0.5 text-[11px] text-muted">
-        Your forfeited points are split among rivals who don&apos;t change. Conviction pays.
+        Your forfeited points are split among rivals who don&apos;t change. Conviction pays.{" "}
+        <Link href="/how-it-works#penalties" className="font-bold text-[var(--accent)]">
+          How this works
+        </Link>
       </p>
       <div className="mt-2 flex gap-2">
         <button

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/session";
 import { getReadModel } from "@/lib/aggregate";
 import { AppShell } from "@/components/app-shell";
@@ -47,6 +48,13 @@ export default async function SettingsPage() {
           <EnableNotifications />
           <SoundToggle />
           <ChangePin />
+          <Link
+            href="/how-it-works"
+            className="flex items-center justify-between rounded-xl bg-surface-2 px-4 py-3 text-sm font-bold transition active:scale-[0.99]"
+          >
+            How scoring &amp; penalties work
+            <span className="text-[var(--accent)]">📖</span>
+          </Link>
           <SignOutButton />
         </Card>
       </div>

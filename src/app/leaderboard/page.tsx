@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser, getActiveLeague } from "@/lib/session";
 import {
   getReadModel,
@@ -56,7 +57,12 @@ export default async function LeaderboardPage() {
 
   return (
     <AppShell>
-      <h1 className="title-bc mb-4 text-3xl">Leaderboard</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="title-bc text-3xl">Leaderboard</h1>
+        <Link href="/how-it-works" className="text-xs font-bold text-[var(--accent)]">
+          How scoring works →
+        </Link>
+      </div>
       <LeaderboardTabs
         scopes={scopes}
         currentUserId={user.id}
