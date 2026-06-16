@@ -322,23 +322,24 @@ function serializeGlobalRow(r: LeaderboardRow): GlobalLeaderboardRow {
   };
 }
 
+// The whole global model is heavy, so compute it at most once per 5 min and
+// cache the FULL ranking (serialized). Both the top-N slice and any viewer's
+// rank are then O(1) lookups against the cache — no per-request recompute, even
+// for the (common, at scale) case of a player ranked outside the top-N.
 const _computeGlobalLeaderboard = unstable_cache(
-  async (): Promise<{ rows: GlobalLeaderboardRow[]; totalPlayers: number }> => {
+  async (): Promise<{ all: GlobalLeaderboardRow[]; totalPlayers: number }> => {
     const model = await getReadModel();
     const ranked = model.leaderboard; // already sorted desc by points
-    return {
-      rows: ranked.slice(0, GLOBAL_LEADERBOARD_CAP).map(serializeGlobalRow),
-      totalPlayers: ranked.length,
-    };
+    return { all: ranked.map(serializeGlobalRow), totalPlayers: ranked.length };
   },
   ["global-leaderboard"],
   { revalidate: 300 },
 );
 
 /**
- * Cached, capped global leaderboard plus the viewer's own standing.
- * `viewerId` is resolved against the full ranking (not just the visible cap)
- * so the player always sees their true rank.
+ * Cached, capped global leaderboard plus the viewer's own standing. The client
+ * only ever receives the top-N rows + the single viewer row, but the viewer's
+ * true rank is resolved against the full cached ranking.
  */
 export async function getGlobalLeaderboard(viewerId?: string): Promise<{
   rows: GlobalLeaderboardRow[];
@@ -346,23 +347,16 @@ export async function getGlobalLeaderboard(viewerId?: string): Promise<{
   viewerRank: number | null;
   viewerRow: GlobalLeaderboardRow | null;
 }> {
-  const { rows, totalPlayers } = await _computeGlobalLeaderboard();
+  const { all, totalPlayers } = await _computeGlobalLeaderboard();
+  const rows = all.slice(0, GLOBAL_LEADERBOARD_CAP);
 
   let viewerRank: number | null = null;
   let viewerRow: GlobalLeaderboardRow | null = null;
   if (viewerId) {
-    const idx = rows.findIndex((r) => r.userId === viewerId);
+    const idx = all.findIndex((r) => r.userId === viewerId);
     if (idx >= 0) {
       viewerRank = idx + 1;
-      viewerRow = rows[idx];
-    } else {
-      // Outside the cached top-N — find true rank from the full model.
-      const model = await getReadModel();
-      const fullIdx = model.leaderboard.findIndex((r) => r.user.id === viewerId);
-      if (fullIdx >= 0) {
-        viewerRank = fullIdx + 1;
-        viewerRow = serializeGlobalRow(model.leaderboard[fullIdx]);
-      }
+      viewerRow = all[idx];
     }
   }
 
