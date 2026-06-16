@@ -9,7 +9,10 @@ import { MatchCard, type Predictor } from "@/components/match-card";
 import { HeroMatch } from "@/components/hero-match";
 import { LevelBar } from "@/components/level-bar";
 import { StreakBadge } from "@/components/streak-badge";
+import { CelebrateProgress } from "@/components/celebrate-progress";
 import { Card, CardTitle } from "@/components/ui/card";
+import { computeAchievements } from "@/lib/achievements";
+import { rankProgress } from "@/lib/constants";
 import { isSameMelbourneDay } from "@/lib/time";
 import { chrome } from "@/lib/display";
 
@@ -55,8 +58,29 @@ export default async function DashboardPage() {
   const need = myOpenPredictions.length;
   const firstOpen = myOpenPredictions[0];
 
+  // Celebrate newly-unlocked badges / level-ups since this device last looked.
+  const myAchievements = me
+    ? computeAchievements({
+        points: me.points,
+        played: me.played,
+        exactScores: me.exactScores,
+        perfectPicks: me.perfectPicks,
+        matchWins: me.matchWins,
+        currentStreak: me.currentStreak,
+        groupCorrect: me.groupCorrect,
+        knockoutPoints: me.knockoutPoints,
+        winnings: me.winnings,
+        dailyStreak: user.streakCount ?? 0,
+      })
+    : [];
+  const earnedBadges = myAchievements
+    .filter((a) => a.earned)
+    .map((a) => ({ id: a.id, name: a.name, icon: a.icon }));
+  const lvl = rankProgress(me?.points ?? 0);
+
   return (
     <AppShell>
+      <CelebrateProgress earnedBadges={earnedBadges} level={lvl.level} levelTitle={lvl.title} />
       <div className="flex flex-col gap-5">
         <div>
           <h1 className="title-bc text-3xl">
