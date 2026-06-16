@@ -187,6 +187,16 @@ create table if not exists knockout_predictions (
   primary key (user_id, match_id)
 );
 
+create table if not exists wager_duels (
+  id uuid primary key default gen_random_uuid(),
+  match_id text not null,
+  challenger_id text not null,
+  opponent_id text not null,
+  stake int not null default 10,
+  status text not null default 'pending',
+  created_at timestamptz not null default now()
+);
+
 create table if not exists friend_requests (
   from_user text not null,
   to_user text not null,
@@ -212,7 +222,18 @@ create table if not exists push_subscriptions (
 );
 
 create index if not exists predictions_match_idx on predictions(match_id);
+create index if not exists predictions_user_idx on predictions(user_id);
 create index if not exists messages_league_idx on messages(league_id, created_at);
+create index if not exists league_members_league_idx on league_members(league_id);
+create index if not exists prediction_scores_user_idx on prediction_scores(user_id);
+create index if not exists group_predictions_user_idx on group_predictions(user_id);
+create index if not exists knockout_predictions_user_idx on knockout_predictions(user_id);
+create index if not exists join_requests_league_idx on join_requests(league_id);
+create index if not exists friend_requests_to_idx on friend_requests(to_user);
+create index if not exists friend_requests_from_idx on friend_requests(from_user);
+create index if not exists wager_duels_challenger_idx on wager_duels(challenger_id);
+create index if not exists wager_duels_opponent_idx on wager_duels(opponent_id);
+create index if not exists wager_duels_match_idx on wager_duels(match_id);
 create index if not exists league_members_user_idx on league_members(user_id);
 
 -- RLS on, no public policies (service-role key bypasses it).
@@ -232,4 +253,5 @@ alter table group_predictions enable row level security;
 alter table knockout_predictions enable row level security;
 alter table join_requests enable row level security;
 alter table friend_requests enable row level security;
+alter table wager_duels enable row level security;
 alter table push_subscriptions enable row level security;

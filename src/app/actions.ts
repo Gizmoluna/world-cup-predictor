@@ -37,6 +37,7 @@ import { getMessages, addMessage } from "@/lib/chat";
 import { saveGroupPrediction } from "@/lib/group-predictions";
 import { saveKnockoutPrediction } from "@/lib/knockout-predictions";
 import { sendFriendRequest, acceptFriend, removeFriend } from "@/lib/friends";
+import { createDuel, setDuelStatus } from "@/lib/duels";
 import { getUsers } from "@/lib/data";
 import { chrome } from "@/lib/display";
 import { getProvider } from "@/lib/football-api/provider";
@@ -280,6 +281,27 @@ export async function removeFriendAction(otherId: string) {
   await removeFriend(userId, otherId);
   revalidatePath(`/profile/${userId}`);
   revalidatePath(`/profile/${otherId}`);
+  return { ok: true as const };
+}
+
+// --- friend-vs-friend duels ------------------------------------------------
+
+export async function challengeFriendAction(matchId: string, opponentId: string, stake: number) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  const res = await createDuel(matchId, userId, opponentId, stake);
+  if (!res.ok) return { ok: false as const, error: res.error ?? "Could not create duel." };
+  revalidatePath("/duels");
+  revalidatePath(`/matches/${matchId}`);
+  return { ok: true as const };
+}
+
+export async function respondDuelAction(duelId: string, accept: boolean) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  const res = await setDuelStatus(duelId, userId, accept ? "accepted" : "declined");
+  if (!res.ok) return { ok: false as const, error: res.error ?? "Failed." };
+  revalidatePath("/duels");
   return { ok: true as const };
 }
 

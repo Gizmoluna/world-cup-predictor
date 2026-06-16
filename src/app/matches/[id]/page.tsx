@@ -14,6 +14,9 @@ import { PredictionForm } from "@/components/prediction-form";
 import { MatchTimeline } from "@/components/match-timeline";
 import { PredictionSummary } from "@/components/prediction-summary";
 import { ShareResult } from "@/components/share-result";
+import { DuelChallenge } from "@/components/duel-challenge";
+import { getFriendIds } from "@/lib/friends";
+import { getUsers } from "@/lib/data";
 import { melbourne, isLocked } from "@/lib/time";
 import { chrome } from "@/lib/display";
 import type { AppUser } from "@/lib/types";
@@ -74,6 +77,13 @@ export default async function MatchPage({
 
   // Order: me first, then other members.
   const ordered = [user, ...members.filter((m) => m.id !== user.id)];
+
+  // Friends you can wager against on this match (before kickoff).
+  const friendIds = await getFriendIds(user.id);
+  const allUsers = await getUsers();
+  const duelFriends = allUsers
+    .filter((u) => friendIds.includes(u.id))
+    .map((u) => ({ id: u.id, name: u.name, flag: chrome(u).flag }));
 
   return (
     <AppShell>
@@ -157,6 +167,9 @@ export default async function MatchPage({
                 : "no one else has predicted yet"}
             </p>
           </Card>
+          <div className="mb-4">
+            <DuelChallenge matchId={id} friends={duelFriends} />
+          </div>
           <PredictionForm
             match={match}
             home={home}
