@@ -207,7 +207,13 @@ export function LeaguesPanel({
       )}
 
       <section className="glass p-4">
-        <h2 className="mb-3 text-sm font-bold">Create a league</h2>
+        <h2 className="mb-1 text-sm font-bold">Create a league</h2>
+        <p className="mb-3 text-xs text-muted">
+          Your own private league with friends. Everyone predicts every match, and you can{" "}
+          <span className="font-bold text-pitch">wager on any match</span> — duel a rival on the
+          score or open a whole-group pot — with all{" "}
+          <span className="font-bold text-fg">winnings &amp; debts tracked</span> for the league.
+        </p>
         <div className="flex gap-2">
           <input
             value={name}
@@ -217,6 +223,11 @@ export function LeaguesPanel({
           />
           <Button variant="accent" disabled={pending || !name.trim()} onClick={create}>Create</Button>
         </div>
+        <ul className="mt-3 space-y-1 text-[11px] text-muted">
+          <li>⚔️ <span className="font-bold text-fg">Duels</span> — bet a rival on the 90′ score (full or split across markets)</li>
+          <li>💰 <span className="font-bold text-fg">Group pots</span> — whole-league pot per match, you pick how it&apos;s won</li>
+          <li>📊 <span className="font-bold text-fg">Ledger</span> — running winnings &amp; who-owes-whom on the Duels tab</li>
+        </ul>
       </section>
 
       <section className="glass p-4">
