@@ -5,6 +5,7 @@ import { getLeagueMembers } from "@/lib/leagues";
 import { getReadModel } from "@/lib/aggregate";
 import { AppShell } from "@/components/app-shell";
 import { MatchFilter } from "@/components/match-filter";
+import { TournamentHub } from "@/components/tournament-hub";
 import { chrome } from "@/lib/display";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +45,13 @@ export default async function MatchesPage() {
           <BarChart3 size={14} /> Standings
         </Link>
       </div>
+
+      {/* Predict the tournament: group standings, knockouts, finals + duels. */}
+      <div className="mb-4">
+        <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted">Predict the tournament</p>
+        <TournamentHub />
+      </div>
+
       <MatchFilter items={items} groups={groups} favouriteTeamId={user.favouriteTeamId ?? null} />
     </AppShell>
   );

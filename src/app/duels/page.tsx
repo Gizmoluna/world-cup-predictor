@@ -69,8 +69,11 @@ export default async function DuelsPage() {
 
   return (
     <AppShell>
-      <h1 className="title-bc text-3xl">Duels ⚔️💵</h1>
-      <p className="mb-3 text-sm text-muted">Bet a rival — full stake on the 90′ score, or split it across score, result &amp; first scorer.</p>
+      <h1 className="title-bc text-3xl">Bets ⚔️💵</h1>
+      <p className="mb-3 text-sm text-muted">
+        Duel a rival on a match (full stake on the 90′ score, or split across markets), or open a
+        whole-league pot on any match. Winnings &amp; debts tracked below.
+      </p>
       <div className="glass card-bc mb-4 flex items-center justify-between p-4">
         <span className="title-bc text-sm text-muted">Your duel bankroll</span>
         <span className={`num-bc text-3xl ${balance >= 0 ? "text-pitch" : "text-danger"}`}>

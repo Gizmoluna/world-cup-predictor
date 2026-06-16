@@ -8,6 +8,7 @@ import {
 } from "@/lib/aggregate";
 import { AppShell } from "@/components/app-shell";
 import { LeaderboardTabs } from "@/components/leaderboard-tabs";
+import { ScoreBattle } from "@/components/score-battle";
 import { isSameMelbourneDay } from "@/lib/time";
 import { chrome } from "@/lib/display";
 
@@ -63,6 +64,11 @@ export default async function LeaderboardPage() {
           How scoring works →
         </Link>
       </div>
+      {model.leaderboard.length > 1 && (
+        <div className="mb-4">
+          <ScoreBattle rows={model.leaderboard} />
+        </div>
+      )}
       <LeaderboardTabs
         scopes={scopes}
         currentUserId={user.id}

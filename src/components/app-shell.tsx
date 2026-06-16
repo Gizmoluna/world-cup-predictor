@@ -1,15 +1,13 @@
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { Settings, MessageCircle, Users } from "lucide-react";
 import { getCurrentUser, getActiveLeague } from "@/lib/session";
 import { getUserLeagues } from "@/lib/leagues";
 import { ThemeApplier } from "./theme-applier";
 import { BottomNav } from "./bottom-nav";
 import { LeagueSwitcher } from "./league-switcher";
-import { chrome } from "@/lib/display";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
-  const c = user ? chrome(user) : null;
   const [active, leagues] = user
     ? await Promise.all([getActiveLeague(user.id), getUserLeagues(user.id)])
     : [null, []];
@@ -27,13 +25,17 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            {user && c && (
-              <Link href={`/profile/${user.id}`} className="flex items-center gap-1.5 text-sm font-bold">
-                <span>{c.flag}</span>
-                <span className="text-[var(--accent)]">{user.name}</span>
-              </Link>
+            {user && (
+              <>
+                <Link href="/leagues" className="text-muted hover:text-foreground" aria-label="Leagues">
+                  <Users size={20} />
+                </Link>
+                <Link href="/chat" className="text-muted hover:text-foreground" aria-label="League chat">
+                  <MessageCircle size={20} />
+                </Link>
+              </>
             )}
-            <Link href="/settings" className="text-muted hover:text-foreground">
+            <Link href="/settings" className="text-muted hover:text-foreground" aria-label="Settings">
               <Settings size={20} />
             </Link>
           </div>
