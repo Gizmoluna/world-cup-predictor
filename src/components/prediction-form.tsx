@@ -120,7 +120,7 @@ export function PredictionForm({
             { value: "none", label: "Neither" },
             { value: away.id, label: away.shortName },
           ]}
-          onChange={(v) => set({ cleanSheetTeamId: v === "none" ? null : v })}
+          onChange={(v) => set({ cleanSheetTeamId: v })}
         />
       </Section>
 

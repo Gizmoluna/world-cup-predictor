@@ -32,16 +32,18 @@ export function buildMatchResult(
     } else {
       firstTeamToScoreId = firstGoal.teamId;
     }
-  } else if (homeScore > 0 || awayScore > 0) {
-    // No event detail but there were goals — infer nothing reliably.
-    firstTeamToScoreId = null;
+  } else if (homeScore === 0 && awayScore === 0) {
+    // Goalless — "No goals" is the correct first-to-score pick.
+    firstTeamToScoreId = "none";
   }
+  // (goals happened but no event detail → leave null; can't infer reliably)
 
   const bothTeamsToScore = homeScore > 0 && awayScore > 0;
 
   let cleanSheetTeamId: string | null = null;
   if (awayScore === 0 && homeScore > 0) cleanSheetTeamId = match.homeTeamId;
   else if (homeScore === 0 && awayScore > 0) cleanSheetTeamId = match.awayTeamId;
+  else if (homeScore > 0 && awayScore > 0) cleanSheetTeamId = "none"; // both scored → "Neither"
 
   // First goal scorer: first non-own-goal scorer with a known player.
   const firstScorerEvent = goals.find(

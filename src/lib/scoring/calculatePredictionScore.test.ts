@@ -118,6 +118,19 @@ describe("calculatePredictionScore — markets", () => {
     expect(score.cleanSheetPoints).toBe(POINTS.cleanSheet);
   });
 
+  it("'Neither' clean-sheet pick scores when both teams scored", () => {
+    // buildMatchResult emits cleanSheetTeamId 'none' for a both-scored game.
+    const r = baseResult({ cleanSheetTeamId: "none" });
+    const score = calculatePredictionScore(r, basePrediction({ cleanSheetTeamId: "none" }));
+    expect(score.cleanSheetPoints).toBe(POINTS.cleanSheet);
+  });
+
+  it("'No goals' first-to-score pick scores on a 0-0", () => {
+    const r = baseResult({ homeScore: 0, awayScore: 0, firstTeamToScoreId: "none", bothTeamsToScore: false });
+    const score = calculatePredictionScore(r, basePrediction({ firstTeamToScoreId: "none" }));
+    expect(score.firstTeamScorePoints).toBe(POINTS.firstTeamToScore);
+  });
+
   it("scores first goal scorer and anytime scorer", () => {
     const score = calculatePredictionScore(
       baseResult(),
@@ -274,7 +287,7 @@ describe("buildMatchResult", () => {
     expect(r.firstGoalScorerId).toBe("p_home_1");
     expect(r.goalScorerIds).toEqual(["p_home_1", "p_away_1", "p_home_2"]);
     expect(r.bothTeamsToScore).toBe(true);
-    expect(r.cleanSheetTeamId).toBeNull();
+    expect(r.cleanSheetTeamId).toBe("none"); // both scored → "Neither" is correct
     expect(r.yellowCardPlayerIds).toContain("p_away_3");
     expect(r.winnerTeamId).toBe(HOME);
   });
