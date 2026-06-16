@@ -9,6 +9,7 @@ import { ScoreBattle } from "@/components/score-battle";
 import { MatchCard, type Predictor } from "@/components/match-card";
 import { HeroMatch } from "@/components/hero-match";
 import { StreakBadge } from "@/components/streak-badge";
+import { LevelBar } from "@/components/level-bar";
 import { TournamentHub } from "@/components/tournament-hub";
 import { FactTicker } from "@/components/fact-ticker";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -91,6 +92,8 @@ export default async function DashboardPage() {
         )}
 
         <ScoreBattle rows={model.leaderboard} />
+
+        {me && <LevelBar points={me.points} />}
 
         <StreakBadge initial={user.streakCount ?? 0} />
 

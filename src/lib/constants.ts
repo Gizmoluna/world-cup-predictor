@@ -105,14 +105,49 @@ export function isAdmin(id?: string | null): boolean {
   return !!id && ADMIN_USER_IDS.includes(id);
 }
 
-// Gamification: a rank/title earned from total points.
+// Gamification: rank tiers earned from total points.
+export interface RankTier {
+  min: number;
+  title: string;
+  icon: string;
+}
+export const RANK_TIERS: RankTier[] = [
+  { min: 0, title: "Rookie", icon: "🌱" },
+  { min: 10, title: "Regular", icon: "⚽" },
+  { min: 25, title: "Pundit", icon: "📈" },
+  { min: 50, title: "Gaffer", icon: "🎯" },
+  { min: 80, title: "Legend", icon: "🏆" },
+  { min: 120, title: "GOAT", icon: "🐐" },
+];
+
 export function rankFor(points: number): { title: string; icon: string } {
-  if (points >= 120) return { title: "GOAT", icon: "🐐" };
-  if (points >= 80) return { title: "Legend", icon: "🏆" };
-  if (points >= 50) return { title: "Gaffer", icon: "🎯" };
-  if (points >= 25) return { title: "Pundit", icon: "📈" };
-  if (points >= 10) return { title: "Regular", icon: "⚽" };
-  return { title: "Rookie", icon: "🌱" };
+  let r = RANK_TIERS[0];
+  for (const t of RANK_TIERS) if (points >= t.min) r = t;
+  return { title: r.title, icon: r.icon };
+}
+
+/** Level + progress to the next rank, for the XP bar. */
+export function rankProgress(points: number): {
+  level: number;
+  title: string;
+  icon: string;
+  nextTitle: string | null;
+  toNext: number;
+  progress: number; // 0..1 within the current tier
+} {
+  let idx = 0;
+  for (let i = 0; i < RANK_TIERS.length; i++) if (points >= RANK_TIERS[i].min) idx = i;
+  const cur = RANK_TIERS[idx];
+  const next = RANK_TIERS[idx + 1] ?? null;
+  const progress = next ? (points - cur.min) / (next.min - cur.min) : 1;
+  return {
+    level: idx + 1,
+    title: cur.title,
+    icon: cur.icon,
+    nextTitle: next?.title ?? null,
+    toNext: next ? next.min - points : 0,
+    progress: Math.max(0, Math.min(1, progress)),
+  };
 }
 
 export const APP_NAME = "World Cup Predictor";

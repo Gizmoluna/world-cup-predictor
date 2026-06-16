@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { TeamFlag } from "@/components/team-flag";
 import { FriendButton } from "@/components/friend-button";
 import { FriendRequests } from "@/components/friend-requests";
+import { LevelBar } from "@/components/level-bar";
+import { AchievementsGrid } from "@/components/achievements-grid";
+import { computeAchievements } from "@/lib/achievements";
 import { THEMES, DEFAULT_THEME, rival } from "@/lib/constants";
 import { chrome } from "@/lib/display";
 import { cn } from "@/lib/utils";
@@ -70,6 +73,18 @@ export default async function ProfilePage({
   const accuracy = played > 0 ? Math.round((exactScores / played) * 100) : 0;
 
   const uniqueBadges = Array.from(new Set(row?.badges ?? []));
+
+  const achievements = computeAchievements({
+    points: row?.points ?? 0,
+    played: row?.played ?? 0,
+    exactScores: row?.exactScores ?? 0,
+    perfectPicks: row?.perfectPicks ?? 0,
+    matchWins: row?.matchWins ?? 0,
+    currentStreak: row?.currentStreak ?? 0,
+    groupCorrect: row?.groupCorrect ?? 0,
+    knockoutPoints: row?.knockoutPoints ?? 0,
+    winnings: row?.winnings ?? 0,
+  });
 
   // Friends
   const viewer = await getCurrentUser();
@@ -164,6 +179,15 @@ export default async function ProfilePage({
               {bootPlayer ? bootPlayer.name : <span className="text-muted">Not set</span>}
             </PickRow>
           </div>
+        </Card>
+
+        {/* Level / XP */}
+        <LevelBar points={row?.points ?? 0} />
+
+        {/* Achievements */}
+        <Card className="flex flex-col gap-3">
+          <CardTitle>Achievements</CardTitle>
+          <AchievementsGrid achievements={achievements} />
         </Card>
 
         {/* Prediction stats */}
