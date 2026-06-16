@@ -124,6 +124,16 @@ export function PredictionForm({
         />
       </Section>
 
+      {pickerPlayers.length === 0 && (
+        <div className="rounded-xl border border-border bg-surface-2 p-3 text-xs text-muted">
+          ⚽ Squad not published yet for this match, so player picks (scorers, player
+          of the match, cards) aren&apos;t available — that&apos;s normal before teams
+          announce their rosters. <span className="font-bold text-fg">Your score
+          prediction still counts in full</span>; player markets open once the squads
+          drop.
+        </div>
+      )}
+
       <Section title="First goal scorer" hint="+4 · likeliest scorers first">
         <PlayerPicker
           players={pickerPlayers}
