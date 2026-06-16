@@ -6,6 +6,7 @@ import type { Match, Player, Prediction, Team } from "@/lib/types";
 import { Button } from "./ui/button";
 import { savePredictionAction } from "@/app/actions";
 import { playLock } from "@/lib/sound";
+import { PlayerPicker } from "./player-picker";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -42,7 +43,13 @@ export function PredictionForm({
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const allPlayers = [...homePlayers, ...awayPlayers];
+  // Players with their country flag, for the picker (sorted by scoring odds).
+  const pickerPlayers = [...homePlayers, ...awayPlayers].map((pl) => ({
+    id: pl.id,
+    name: pl.name,
+    position: pl.position,
+    flagUrl: pl.teamId === home.id ? home.flagUrl : away.flagUrl,
+  }));
   const set = (patch: Partial<Prediction>) => setP((prev) => ({ ...prev, ...patch }));
 
   function save() {
@@ -117,43 +124,39 @@ export function PredictionForm({
         />
       </Section>
 
-      <Section title="First goal scorer" hint="+4">
-        <PlayerSelect
-          players={allPlayers}
+      <Section title="First goal scorer" hint="+4 · likeliest scorers first">
+        <PlayerPicker
+          players={pickerPlayers}
           value={p.firstGoalScorerId ?? ""}
           onChange={(v) => set({ firstGoalScorerId: v || null })}
-          home={home}
-          away={away}
+          placeholder="Pick the first scorer"
         />
       </Section>
 
       <Section title="Anytime goal scorer" hint="+2">
-        <PlayerSelect
-          players={allPlayers}
+        <PlayerPicker
+          players={pickerPlayers}
           value={p.anytimeGoalScorerId ?? ""}
           onChange={(v) => set({ anytimeGoalScorerId: v || null })}
-          home={home}
-          away={away}
+          placeholder="Pick a scorer"
         />
       </Section>
 
       <Section title="Player of the match" hint="+3">
-        <PlayerSelect
-          players={allPlayers}
+        <PlayerPicker
+          players={pickerPlayers}
           value={p.playerOfMatchId ?? ""}
           onChange={(v) => set({ playerOfMatchId: v || null })}
-          home={home}
-          away={away}
+          placeholder="Pick player of the match"
         />
       </Section>
 
       <Section title="Yellow card for…" hint="+1 · optional">
-        <PlayerSelect
-          players={allPlayers}
+        <PlayerPicker
+          players={pickerPlayers}
           value={p.yellowCardPlayerId ?? ""}
           onChange={(v) => set({ yellowCardPlayerId: v || null })}
-          home={home}
-          away={away}
+          placeholder="Pick a player"
         />
       </Section>
 
@@ -384,38 +387,3 @@ function YesNo({
   );
 }
 
-function PlayerSelect({
-  players,
-  value,
-  onChange,
-  home,
-  away,
-}: {
-  players: Player[];
-  value: string;
-  onChange: (v: string) => void;
-  home: Team;
-  away: Team;
-}) {
-  const homeP = players.filter((p) => p.teamId === home.id);
-  const awayP = players.filter((p) => p.teamId === away.id);
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full appearance-none rounded-xl border border-border bg-surface-2 px-4 py-3.5 text-base font-semibold outline-none focus:border-[var(--accent)]"
-    >
-      <option value="">— Pick a player —</option>
-      <optgroup label={home.name}>
-        {homeP.map((pl) => (
-          <option key={pl.id} value={pl.id}>{pl.name}</option>
-        ))}
-      </optgroup>
-      <optgroup label={away.name}>
-        {awayP.map((pl) => (
-          <option key={pl.id} value={pl.id}>{pl.name}</option>
-        ))}
-      </optgroup>
-    </select>
-  );
-}

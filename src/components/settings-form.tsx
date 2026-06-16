@@ -4,9 +4,10 @@ import { useEffect, useState, useTransition } from "react";
 import { updateProfile } from "@/app/actions";
 import { PICKER_THEMES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { PlayerPicker } from "./player-picker";
 import type { AppUser, Player, Team } from "@/lib/types";
 
-type RosterPlayer = { id: string; name: string };
+type RosterPlayer = { id: string; name: string; position?: string | null };
 
 const FIELD =
   "h-12 w-full rounded-xl border border-border bg-surface-2 px-3 text-base outline-none focus:border-[var(--accent)]";
@@ -58,6 +59,8 @@ export function SettingsForm({
       cancelled = true;
     };
   }, [favouriteTeamId]);
+
+  const favTeamFlag = teams.find((t) => t.id === favouriteTeamId)?.flagUrl ?? null;
 
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
@@ -146,23 +149,15 @@ export function SettingsForm({
 
       {/* Favourite player */}
       <div className="flex flex-col gap-2">
-        <label htmlFor="fav-player" className="text-xs font-bold uppercase tracking-widest text-muted">
+        <label className="text-xs font-bold uppercase tracking-widest text-muted">
           Favourite player {loadingRoster && <span className="text-muted">· loading…</span>}
         </label>
-        <select
-          id="fav-player"
+        <PlayerPicker
+          players={roster.map((p) => ({ ...p, flagUrl: favTeamFlag }))}
           value={favouritePlayerId}
-          onChange={(e) => setFavouritePlayerId(e.target.value)}
-          className={FIELD}
-          disabled={!favouriteTeamId}
-        >
-          <option value="">{favouriteTeamId ? "— None —" : "Pick a favourite team first"}</option>
-          {roster.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+          onChange={setFavouritePlayerId}
+          placeholder={favouriteTeamId ? "Pick a player" : "Pick a favourite team first"}
+        />
       </div>
 
       {/* World Cup winner pick */}
@@ -187,23 +182,15 @@ export function SettingsForm({
 
       {/* Golden Boot pick */}
       <div className="flex flex-col gap-2">
-        <label htmlFor="golden-boot" className="text-xs font-bold uppercase tracking-widest text-muted">
+        <label className="text-xs font-bold uppercase tracking-widest text-muted">
           Golden Boot pick <span className="text-muted">· from your favourite team</span>
         </label>
-        <select
-          id="golden-boot"
+        <PlayerPicker
+          players={roster.map((p) => ({ ...p, flagUrl: favTeamFlag }))}
           value={goldenBootPickId}
-          onChange={(e) => setGoldenBootPickId(e.target.value)}
-          className={FIELD}
-          disabled={!favouriteTeamId}
-        >
-          <option value="">{favouriteTeamId ? "— None —" : "Pick a favourite team first"}</option>
-          {roster.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+          onChange={setGoldenBootPickId}
+          placeholder={favouriteTeamId ? "Pick a player" : "Pick a favourite team first"}
+        />
       </div>
 
       {message && (
