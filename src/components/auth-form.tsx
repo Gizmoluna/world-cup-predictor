@@ -1,25 +1,43 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { Eye, EyeOff, X } from "lucide-react";
 import { logIn, signUp } from "@/app/actions";
 import { Button } from "./ui/button";
 import { FLAG_OPTIONS, PICKER_THEMES, DEFAULT_THEME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-interface ExistingUser {
+// Minimum password length for a normal new account. Carina & Johnny are exempt
+// server-side, but everyone signing up here needs at least this many characters.
+const SIGNUP_MIN = 6;
+
+// Per-device memory of who has signed in here — so returning players tap their
+// OWN name instead of being shown a public roster of everyone.
+const KNOWN_KEY = "wcp_known_accounts";
+interface KnownAccount {
   name: string;
   flag: string;
 }
+function loadKnown(): KnownAccount[] {
+  try {
+    const raw = localStorage.getItem(KNOWN_KEY);
+    return raw ? (JSON.parse(raw) as KnownAccount[]) : [];
+  } catch {
+    return [];
+  }
+}
+function rememberAccount(acc: KnownAccount) {
+  try {
+    const list = loadKnown().filter((a) => a.name.toLowerCase() !== acc.name.toLowerCase());
+    localStorage.setItem(KNOWN_KEY, JSON.stringify([acc, ...list].slice(0, 6)));
+  } catch {
+    /* ignore */
+  }
+}
 
-export function AuthForm({
-  existing,
-  joinCode,
-}: {
-  existing: ExistingUser[];
-  joinCode?: string;
-}) {
-  const [mode, setMode] = useState<"login" | "signup">(existing.length ? "login" : "signup");
+export function AuthForm({ joinCode }: { joinCode?: string }) {
+  const [known, setKnown] = useState<KnownAccount[]>([]);
+  const [mode, setMode] = useState<"login" | "signup">("login");
   const [name, setName] = useState("");
   const [secret, setSecret] = useState("");
   const [show, setShow] = useState(false);
@@ -29,8 +47,35 @@ export function AuthForm({
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
+  // Read this device's remembered accounts on mount. New devices start empty,
+  // defaulting to sign-up.
+  useEffect(() => {
+    const list = loadKnown();
+    setKnown(list);
+    if (list.length === 0) setMode("signup");
+  }, []);
+
+  function forget(n: string) {
+    const next = known.filter((a) => a.name !== n);
+    setKnown(next);
+    try {
+      localStorage.setItem(KNOWN_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const tooShort = mode === "signup" && secret.length > 0 && secret.length < SIGNUP_MIN;
+
   function submit() {
     setError(null);
+    if (mode === "signup" && secret.length < SIGNUP_MIN) {
+      setError(`Password must be at least ${SIGNUP_MIN} letters or numbers.`);
+      return;
+    }
+    // Remember this name on the device optimistically; if the action fails it's
+    // harmless, and on success it redirects away before we'd clean up anyway.
+    rememberAccount({ name: name.trim(), flag: mode === "signup" ? flag : "👤" });
     start(async () => {
       const res =
         mode === "login"
@@ -59,20 +104,33 @@ export function AuthForm({
         ))}
       </div>
 
-      {mode === "login" && existing.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-2">
-          {existing.map((u) => (
-            <button
-              key={u.name}
-              onClick={() => setName(u.name)}
-              className={cn(
-                "rounded-full px-3 py-1 text-xs font-bold transition active:scale-95",
-                name === u.name ? "bg-[var(--accent)] text-black" : "bg-white/8 text-muted",
-              )}
-            >
-              {u.flag} {u.name}
-            </button>
-          ))}
+      {mode === "login" && known.length > 0 && (
+        <div className="mb-3">
+          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-widest text-muted">
+            Continue as
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {known.map((u) => (
+              <span
+                key={u.name}
+                className={cn(
+                  "flex items-center gap-1 rounded-full pl-3 pr-1 py-1 text-xs font-bold transition",
+                  name === u.name ? "bg-[var(--accent)] text-black" : "bg-white/8 text-muted",
+                )}
+              >
+                <button onClick={() => setName(u.name)} className="active:scale-95">
+                  {u.flag} {u.name}
+                </button>
+                <button
+                  onClick={() => forget(u.name)}
+                  aria-label={`Forget ${u.name}`}
+                  className="rounded-full p-0.5 opacity-60 hover:opacity-100"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
@@ -125,7 +183,7 @@ export function AuthForm({
       )}
 
       <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-muted">
-        PIN or password
+        {mode === "signup" ? "Choose a password" : "PIN or password"}
       </label>
       <div className="relative mb-4">
         <input
@@ -148,6 +206,26 @@ export function AuthForm({
         </button>
       </div>
 
+      {mode === "signup" && (
+        <div className="mb-4 -mt-2 rounded-xl bg-surface-2 p-3">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted">
+            Password rules
+          </p>
+          <ul className="mt-1 space-y-0.5 text-xs text-muted">
+            <li className={cn(secret.length >= SIGNUP_MIN && "text-pitch")}>
+              {secret.length >= SIGNUP_MIN ? "✓" : "•"} At least {SIGNUP_MIN} letters or numbers
+            </li>
+            <li>• Letters, numbers or symbols — your choice</li>
+            <li>• Write it down — you&apos;ll need it to log back in</li>
+          </ul>
+          {tooShort && (
+            <p className="mt-1 text-xs font-bold text-danger">
+              {SIGNUP_MIN - secret.length} more character{SIGNUP_MIN - secret.length === 1 ? "" : "s"} to go
+            </p>
+          )}
+        </div>
+      )}
+
       <label className="mb-5 flex cursor-pointer items-center gap-2 text-sm text-muted">
         <input
           type="checkbox"
@@ -164,7 +242,7 @@ export function AuthForm({
         variant="accent"
         size="lg"
         className="w-full"
-        disabled={pending || !name.trim() || !secret}
+        disabled={pending || !name.trim() || !secret || tooShort}
         onClick={submit}
       >
         {pending ? "…" : mode === "login" ? "Log in" : "Create account"}

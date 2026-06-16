@@ -21,7 +21,9 @@ export function SettingsForm({
   teams: Team[];
   players: Player[];
 }) {
-  const [nationality, setNationality] = useState(user.nationality ?? "");
+  const [homeCountry, setHomeCountry] = useState(user.homeCountry ?? user.nationality ?? "");
+  const [adoptedCountry, setAdoptedCountry] = useState(user.adoptedCountry ?? "");
+  const [favouriteCountry, setFavouriteCountry] = useState(user.favouriteCountry ?? "");
   const [favouriteTeamId, setFavouriteTeamId] = useState(user.favouriteTeamId ?? "");
   const [favouritePlayerId, setFavouritePlayerId] = useState(user.favouritePlayerId ?? "");
   const [worldCupWinnerPickId, setWorldCupWinnerPickId] = useState(
@@ -69,7 +71,11 @@ export function SettingsForm({
     setMessage(null);
     startTransition(async () => {
       const res = await updateProfile({
-        nationality: nationality.trim() || null,
+        // Keep legacy `nationality` in sync with home country for older views.
+        nationality: homeCountry.trim() || null,
+        homeCountry: homeCountry.trim() || null,
+        adoptedCountry: adoptedCountry.trim() || null,
+        favouriteCountry: favouriteCountry.trim() || null,
         favouriteTeamId: favouriteTeamId || null,
         favouritePlayerId: favouritePlayerId || null,
         worldCupWinnerPickId: worldCupWinnerPickId || null,
@@ -112,17 +118,45 @@ export function SettingsForm({
         </div>
       </div>
 
-      {/* Nationality */}
+      {/* Countries */}
       <div className="flex flex-col gap-2">
-        <label htmlFor="nationality" className="text-xs font-bold uppercase tracking-widest text-muted">
-          Nationality
+        <label htmlFor="home-country" className="text-xs font-bold uppercase tracking-widest text-muted">
+          Home country
         </label>
         <input
-          id="nationality"
+          id="home-country"
           type="text"
-          value={nationality}
-          onChange={(e) => setNationality(e.target.value)}
-          placeholder="e.g. Colombia"
+          value={homeCountry}
+          onChange={(e) => setHomeCountry(e.target.value)}
+          placeholder="🇨🇴 e.g. Colombia"
+          className={FIELD}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="adopted-country" className="text-xs font-bold uppercase tracking-widest text-muted">
+          Adopted country <span className="normal-case text-muted">· your second home</span>
+        </label>
+        <input
+          id="adopted-country"
+          type="text"
+          value={adoptedCountry}
+          onChange={(e) => setAdoptedCountry(e.target.value)}
+          placeholder="🇦🇺 e.g. Australia"
+          className={FIELD}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="fav-country" className="text-xs font-bold uppercase tracking-widest text-muted">
+          Favourite country <span className="normal-case text-muted">· who you back (≠ home)</span>
+        </label>
+        <input
+          id="fav-country"
+          type="text"
+          value={favouriteCountry}
+          onChange={(e) => setFavouriteCountry(e.target.value)}
+          placeholder="🇧🇷 e.g. Brazil"
           className={FIELD}
         />
       </div>

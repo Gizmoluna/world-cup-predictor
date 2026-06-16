@@ -14,8 +14,10 @@ import type {
   PredictionScore,
   Team,
 } from "@/lib/types";
+import { unstable_cache } from "next/cache";
 import { getProvider } from "@/lib/football-api/provider";
 import { getAllPredictions, getUsers } from "@/lib/data";
+import { chrome } from "@/lib/display";
 import { getLeagueMembers, getLeagueMemberSince } from "@/lib/leagues";
 import { getAllGroupPredictions } from "@/lib/group-predictions";
 import { getAllKnockoutPredictions } from "@/lib/knockout-predictions";
@@ -48,6 +50,7 @@ export interface LeaderboardRow {
   groupCorrect: number; // count of correct group-winner picks
   knockoutPoints: number; // points from correct knockout-winner picks
   futuresPenalty: number; // points lost to changing futures picks
+  loyaltyBonus: number; // points gained from rivals who changed (loyalty payout)
 }
 
 export interface ReadModel {
@@ -183,6 +186,12 @@ export async function getReadModel(opts?: {
     }
   }
 
+  // Who actually engaged with futures (so loyalty only rewards real players).
+  const madeFutures = new Set<string>();
+  for (const p of groupPreds) madeFutures.add(p.userId);
+  for (const p of koPreds) madeFutures.add(p.userId);
+  for (const o of groupOrders) madeFutures.add(o.userId);
+
   for (const row of leaderboard) {
     const userOrders = ordersByUser.get(row.user.id) ?? new Map<string, string[]>();
     // Full group-standings predictions (position-based points).
@@ -194,6 +203,10 @@ export async function getReadModel(opts?: {
         if (firstCorrect) row.groupCorrect += 1;
       }
     }
+    // Group-order change penalties (scaled by edit size at save time).
+    for (const o of groupOrders) {
+      if (o.userId === row.user.id) row.futuresPenalty += o.penalty ?? 0;
+    }
     const gPicks = groupPreds.filter((gp) => gp.userId === row.user.id);
     for (const pick of gPicks) {
       // Don't double-count: skip the winner pick if a full order exists for it.
@@ -201,7 +214,7 @@ export async function getReadModel(opts?: {
         row.groupPoints += POINTS.groupWinner;
         row.groupCorrect += 1;
       }
-      row.futuresPenalty += (pick.changeCount ?? 0) * POINTS.changePenalty;
+      row.futuresPenalty += pick.penalty ?? 0;
     }
     const kPicks = koPreds.filter((kp) => kp.userId === row.user.id);
     for (const pick of kPicks) {
@@ -214,9 +227,29 @@ export async function getReadModel(opts?: {
         const actual = km.shootout ? "PENS" : km.extraTime ? "ET" : "90";
         if (pick.method === actual) row.knockoutPoints += POINTS.winMethod;
       }
-      row.futuresPenalty += (pick.changeCount ?? 0) * POINTS.changePenalty;
+      row.futuresPenalty += pick.penalty ?? 0;
     }
     row.points += row.groupPoints + row.knockoutPoints - row.futuresPenalty;
+  }
+
+  // --- loyalty redistribution -----------------------------------------------
+  // Every point forfeited by someone who changed their mind is pooled and split
+  // among the loyal: players who made futures picks and never changed any of
+  // them. Conviction pays; flip-flopping funds your rivals.
+  const pot = leaderboard.reduce((sum, r) => sum + r.futuresPenalty, 0);
+  if (pot > 0) {
+    const loyal = leaderboard.filter(
+      (r) => madeFutures.has(r.user.id) && r.futuresPenalty === 0,
+    );
+    if (loyal.length > 0) {
+      const share = Math.floor(pot / loyal.length);
+      if (share > 0) {
+        for (const r of loyal) {
+          r.loyaltyBonus = share;
+          r.points += share;
+        }
+      }
+    }
   }
   leaderboard.sort((a, b) => b.points - a.points);
 
@@ -254,6 +287,7 @@ export function buildLeaderboard(
       user: u, points: 0, played: 0, matchWins: 0, matchLosses: 0, matchDraws: 0,
       exactScores: 0, perfectPicks: 0, badges: [], currentStreak: 0, avgConfidenceAccuracy: 0,
       winnings: 0, groupPoints: 0, groupCorrect: 0, knockoutPoints: 0, futuresPenalty: 0,
+      loyaltyBonus: 0,
     });
   }
 
@@ -301,4 +335,99 @@ export function buildLeaderboard(
   }
 
   return [...rows.values()].sort((a, b) => b.points - a.points);
+}
+
+// ---------------------------------------------------------------------------
+// Global leaderboard — everyone, across all leagues.
+//
+// This is the one view that must aggregate every player, so it can't be scoped
+// to a league's members. Computing it on every request would melt at scale, so
+// we (a) cache the heavy computation for a few minutes and (b) cap the returned
+// rows. The current viewer's own rank is resolved separately so a player who
+// sits outside the visible top-N still sees where they stand.
+// ---------------------------------------------------------------------------
+
+export interface GlobalLeaderboardRow {
+  userId: string;
+  name: string;
+  flag: string;
+  theme: string;
+  points: number;
+  played: number;
+  matchWins: number;
+  matchDraws: number;
+  matchLosses: number;
+  exactScores: number;
+  perfectPicks: number;
+  currentStreak: number;
+  avgConfidenceAccuracy: number;
+  winnings: number;
+}
+
+const GLOBAL_LEADERBOARD_CAP = 100;
+
+function serializeGlobalRow(r: LeaderboardRow): GlobalLeaderboardRow {
+  return {
+    userId: r.user.id,
+    name: r.user.name,
+    flag: chrome(r.user).flag,
+    theme: r.user.theme,
+    points: r.points,
+    played: r.played,
+    matchWins: r.matchWins,
+    matchDraws: r.matchDraws,
+    matchLosses: r.matchLosses,
+    exactScores: r.exactScores,
+    perfectPicks: r.perfectPicks,
+    currentStreak: r.currentStreak,
+    avgConfidenceAccuracy: r.avgConfidenceAccuracy,
+    winnings: r.winnings,
+  };
+}
+
+const _computeGlobalLeaderboard = unstable_cache(
+  async (): Promise<{ rows: GlobalLeaderboardRow[]; totalPlayers: number }> => {
+    const model = await getReadModel();
+    const ranked = model.leaderboard; // already sorted desc by points
+    return {
+      rows: ranked.slice(0, GLOBAL_LEADERBOARD_CAP).map(serializeGlobalRow),
+      totalPlayers: ranked.length,
+    };
+  },
+  ["global-leaderboard"],
+  { revalidate: 300 },
+);
+
+/**
+ * Cached, capped global leaderboard plus the viewer's own standing.
+ * `viewerId` is resolved against the full ranking (not just the visible cap)
+ * so the player always sees their true rank.
+ */
+export async function getGlobalLeaderboard(viewerId?: string): Promise<{
+  rows: GlobalLeaderboardRow[];
+  totalPlayers: number;
+  viewerRank: number | null;
+  viewerRow: GlobalLeaderboardRow | null;
+}> {
+  const { rows, totalPlayers } = await _computeGlobalLeaderboard();
+
+  let viewerRank: number | null = null;
+  let viewerRow: GlobalLeaderboardRow | null = null;
+  if (viewerId) {
+    const idx = rows.findIndex((r) => r.userId === viewerId);
+    if (idx >= 0) {
+      viewerRank = idx + 1;
+      viewerRow = rows[idx];
+    } else {
+      // Outside the cached top-N — find true rank from the full model.
+      const model = await getReadModel();
+      const fullIdx = model.leaderboard.findIndex((r) => r.user.id === viewerId);
+      if (fullIdx >= 0) {
+        viewerRank = fullIdx + 1;
+        viewerRow = serializeGlobalRow(model.leaderboard[fullIdx]);
+      }
+    }
+  }
+
+  return { rows, totalPlayers, viewerRank, viewerRow };
 }

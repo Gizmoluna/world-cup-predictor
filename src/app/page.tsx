@@ -1,16 +1,12 @@
 import { redirect } from "next/navigation";
 import { getSessionUserId } from "@/lib/session";
-import { getUsers } from "@/lib/data";
 import { APP_NAME, APP_SUBTITLE, APP_TAGLINE } from "@/lib/constants";
-import { chrome } from "@/lib/display";
 import { AuthForm } from "@/components/auth-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function LandingPage() {
   if (await getSessionUserId()) redirect("/dashboard");
-  const users = await getUsers();
-  const existing = users.map((u) => ({ name: u.name, flag: chrome(u).flag }));
 
   return (
     <div className="pitch-lines relative mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center px-6 py-12 text-center">
@@ -23,7 +19,7 @@ export default async function LandingPage() {
         <p className="mt-3 max-w-xs text-sm text-muted">{APP_SUBTITLE}</p>
 
         <div className="mt-10 w-full">
-          <AuthForm existing={existing} />
+          <AuthForm />
         </div>
 
         <p className="mt-8 text-xs text-muted">

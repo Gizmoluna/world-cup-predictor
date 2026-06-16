@@ -36,6 +36,9 @@ create table if not exists users (
   flag text,
   avatar_url text,
   nationality text,
+  home_country text,
+  adopted_country text,
+  favourite_country text,
   favourite_team_id text,
   favourite_player_id text,
   theme text not null default 'gold',
@@ -176,6 +179,7 @@ create table if not exists group_predictions (
   group_name text not null,
   team_id text not null,
   change_count int not null default 0,
+  penalty int not null default 0,
   primary key (user_id, group_name)
 );
 
@@ -185,6 +189,7 @@ create table if not exists knockout_predictions (
   team_id text not null,
   method text,
   change_count int not null default 0,
+  penalty int not null default 0,
   primary key (user_id, match_id)
 );
 
@@ -192,6 +197,8 @@ create table if not exists group_orders (
   user_id text not null,
   group_name text not null,
   team_ids text not null,
+  change_count int not null default 0,
+  penalty int not null default 0,
   primary key (user_id, group_name)
 );
 

@@ -21,7 +21,7 @@ import {
   verifySecret,
   signSession,
   slugId,
-  MIN_SECRET_LENGTH,
+  minSecretLength,
 } from "@/lib/auth";
 import {
   createLeague,
@@ -85,8 +85,9 @@ export async function signUp(input: {
 }) {
   const name = input.name.trim();
   if (name.length < 2) return { ok: false as const, error: "Pick a name (2+ characters)." };
-  if (input.secret.length < MIN_SECRET_LENGTH)
-    return { ok: false as const, error: `PIN/password must be at least ${MIN_SECRET_LENGTH} characters.` };
+  const min = minSecretLength(name);
+  if (input.secret.length < min)
+    return { ok: false as const, error: `Password must be at least ${min} letters or numbers.` };
   if (await getUserByName(name))
     return { ok: false as const, error: "That name is taken — try another or log in." };
 
@@ -115,8 +116,9 @@ export async function logIn(input: {
   const cred = await getCredential(user.id);
   if (!cred) {
     // Unclaimed seed account (e.g. Carina/Johnny): first PIN entered claims it.
-    if (input.secret.length < MIN_SECRET_LENGTH)
-      return { ok: false as const, error: `Choose a PIN/password (${MIN_SECRET_LENGTH}+ chars) to claim this account.` };
+    const min = minSecretLength(user.id);
+    if (input.secret.length < min)
+      return { ok: false as const, error: `Choose a PIN/password (${min}+ characters) to claim this account.` };
     await setCredential(user.id, hashSecret(input.secret));
   } else if (!verifySecret(input.secret, cred)) {
     return { ok: false as const, error: "Wrong PIN/password." };
@@ -136,8 +138,9 @@ export async function logout() {
 export async function changePin(newSecret: string) {
   const userId = await getSessionUserId();
   if (!userId) return { ok: false as const, error: "Not signed in" };
-  if (newSecret.length < MIN_SECRET_LENGTH)
-    return { ok: false as const, error: `PIN/password must be at least ${MIN_SECRET_LENGTH} characters.` };
+  const min = minSecretLength(userId);
+  if (newSecret.length < min)
+    return { ok: false as const, error: `Password must be at least ${min} letters or numbers.` };
   await setCredential(userId, hashSecret(newSecret));
   return { ok: true as const };
 }
@@ -156,8 +159,9 @@ export async function adminResetPin(input: { userId: string; newSecret?: string 
 
   const secret = input.newSecret?.trim();
   if (secret) {
-    if (secret.length < MIN_SECRET_LENGTH)
-      return { ok: false as const, error: `PIN/password must be at least ${MIN_SECRET_LENGTH} characters.` };
+    const min = minSecretLength(input.userId);
+    if (secret.length < min)
+      return { ok: false as const, error: `Password must be at least ${min} letters or numbers.` };
     await setCredential(input.userId, hashSecret(secret));
     return { ok: true as const, mode: "set" as const, name: target.name };
   }
@@ -367,10 +371,10 @@ export async function saveKnockoutMethodPick(matchId: string, method: "90" | "ET
 export async function saveGroupOrderPick(groupName: string, teamIds: string[]) {
   const userId = await getSessionUserId();
   if (!userId) return { ok: false as const, error: "Not signed in" };
-  await saveGroupOrder(userId, groupName, teamIds);
+  const res = await saveGroupOrder(userId, groupName, teamIds);
   revalidatePath("/predict-standings");
   revalidatePath("/leaderboard");
-  return { ok: true as const };
+  return { ok: true as const, ...res };
 }
 
 export async function saveKnockoutPick(matchId: string, teamId: string) {

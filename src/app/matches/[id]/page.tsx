@@ -78,11 +78,15 @@ export default async function MatchPage({
   // Order: me first, then other members.
   const ordered = [user, ...members.filter((m) => m.id !== user.id)];
 
-  // Friends you can wager against on this match (before kickoff).
+  // People you can wager against on this match (before kickoff): your friends
+  // AND anyone in your active league — you don't need to be friends to battle a
+  // league rival.
   const friendIds = await getFriendIds(user.id);
   const allUsers = await getUsers();
+  const oppIds = new Set<string>([...friendIds, ...members.map((m) => m.id)]);
+  oppIds.delete(user.id);
   const duelFriends = allUsers
-    .filter((u) => friendIds.includes(u.id))
+    .filter((u) => oppIds.has(u.id))
     .map((u) => ({ id: u.id, name: u.name, flag: chrome(u).flag }));
 
   return (
@@ -163,7 +167,9 @@ export default async function MatchPage({
             <Lock size={18} className="text-[var(--accent)]" />
             <p className="text-xs text-muted">
               Locks at kickoff · {otherPredicted > 0
-                ? `${otherPredicted} other player${otherPredicted > 1 ? "s" : ""} locked in (hidden 👀)`
+                ? myPred
+                  ? `${otherPredicted} rival${otherPredicted > 1 ? "s" : ""} locked in — revealed below 👇`
+                  : `${otherPredicted} rival${otherPredicted > 1 ? "s" : ""} locked in (predict to reveal 👀)`
                 : "no one else has predicted yet"}
             </p>
           </Card>
@@ -179,6 +185,33 @@ export default async function MatchPage({
             userId={user.id}
             existing={myPred}
           />
+
+          {/* Once you've locked in, you've shown your hand — so you get to see
+              your rivals' picks too, even before kickoff. */}
+          {myPred && otherPredicted > 0 && (
+            <div className="mt-5 flex flex-col gap-4">
+              <CardTitle>Rivals&apos; picks 👀 · you&apos;re locked in</CardTitle>
+              {members
+                .filter((m) => m.id !== user.id && preds.some((p) => p.userId === m.id))
+                .map((m) => {
+                  const pred = preds.find((p) => p.userId === m.id)!;
+                  const c = chrome(memberById.get(m.id) ?? m);
+                  return (
+                    <PredictionSummary
+                      key={m.id}
+                      displayName={c.name}
+                      flag={c.flag}
+                      prediction={pred}
+                      score={undefined}
+                      home={home}
+                      away={away}
+                      playerById={playerById}
+                      winner={false}
+                    />
+                  );
+                })}
+            </div>
+          )}
         </>
       ) : (
         <div className="flex flex-col gap-4">

@@ -1,5 +1,10 @@
 import { requireUser, getActiveLeague } from "@/lib/session";
-import { getReadModel, buildLeaderboard, type LeaderboardRow } from "@/lib/aggregate";
+import {
+  getReadModel,
+  buildLeaderboard,
+  getGlobalLeaderboard,
+  type LeaderboardRow,
+} from "@/lib/aggregate";
 import { AppShell } from "@/components/app-shell";
 import { LeaderboardTabs } from "@/components/leaderboard-tabs";
 import { isSameMelbourneDay } from "@/lib/time";
@@ -38,21 +43,30 @@ export default async function LeaderboardPage() {
     isSameMelbourneDay(s.match.kickoffAt, nowIso),
   );
 
-  // Global = everyone across all leagues (with futures points).
-  const globalModel = await getReadModel();
+  // Global = everyone across all leagues — cached + capped so it scales.
+  const global = await getGlobalLeaderboard(user.id);
 
   const scopes = {
     overall: serialize(model.leaderboard),
     group: serialize(buildLeaderboard(model.users, groupMatches, model.eligibleFrom)),
     knockout: serialize(buildLeaderboard(model.users, koMatches, model.eligibleFrom)),
     daily: serialize(buildLeaderboard(model.users, todayMatches, model.eligibleFrom)),
-    global: serialize(globalModel.leaderboard),
+    global: global.rows,
   };
 
   return (
     <AppShell>
       <h1 className="title-bc mb-4 text-3xl">Leaderboard</h1>
-      <LeaderboardTabs scopes={scopes} />
+      <LeaderboardTabs
+        scopes={scopes}
+        currentUserId={user.id}
+        globalMeta={{
+          totalPlayers: global.totalPlayers,
+          cap: global.rows.length,
+          viewerRank: global.viewerRank,
+          viewerRow: global.viewerRow,
+        }}
+      />
     </AppShell>
   );
 }

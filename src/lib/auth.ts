@@ -15,7 +15,20 @@ const SECRET =
   // Dev/demo fallback. MUST be overridden in production via SESSION_SECRET.
   "dev-insecure-secret-change-me-in-production";
 
-export const MIN_SECRET_LENGTH = 4;
+// Carina and Johnny (the original two) may keep their short PINs; every other
+// player must choose at least 6 letters or numbers.
+export const PRIVILEGED_IDS = new Set(["carina", "johnny"]);
+export const PRIVILEGED_MIN_SECRET_LENGTH = 4;
+export const GENERAL_MIN_SECRET_LENGTH = 6;
+// Back-compat: the general minimum.
+export const MIN_SECRET_LENGTH = GENERAL_MIN_SECRET_LENGTH;
+
+/** Minimum PIN/password length for a given account (by id or name). */
+export function minSecretLength(idOrName: string): number {
+  return PRIVILEGED_IDS.has(slugId(idOrName))
+    ? PRIVILEGED_MIN_SECRET_LENGTH
+    : GENERAL_MIN_SECRET_LENGTH;
+}
 
 export function hashSecret(secret: string): string {
   const salt = randomBytes(16).toString("hex");

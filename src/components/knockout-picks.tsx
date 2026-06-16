@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveKnockoutPick, saveKnockoutMethodPick } from "@/app/actions";
+import { changePenaltyFor } from "@/lib/scoring/points";
+import { ChangeConfirmBar } from "@/components/change-confirm-bar";
 import { cn } from "@/lib/utils";
 
 const METHODS: { key: "90" | "ET" | "PENS"; label: string }[] = [
@@ -35,25 +37,37 @@ interface KItem {
   method: "90" | "ET" | "PENS" | null;
   methodActual: string | null;
   changeCount: number;
+  penalty?: number;
   home: KTeam | null;
   away: KTeam | null;
 }
 
 export function KnockoutPicks({ items }: { items: KItem[] }) {
   const router = useRouter();
-  const [, start] = useTransition();
+  const [busy, start] = useTransition();
   const [picks, setPicks] = useState<Record<string, string | null>>(
     Object.fromEntries(items.map((i) => [i.matchId, i.pickedId])),
   );
   const [note, setNote] = useState<Record<string, string>>({});
+  // matchId -> team they want to switch to, awaiting confirmation.
+  const [pending, setPending] = useState<Record<string, string | null>>({});
 
-  function pick(matchId: string, teamId: string, locked: boolean) {
+  function tap(matchId: string, teamId: string, locked: boolean, current: string | null) {
     if (locked) return;
+    if (!current || current === teamId) {
+      commit(matchId, teamId);
+      return;
+    }
+    setPending((p) => ({ ...p, [matchId]: teamId }));
+  }
+
+  function commit(matchId: string, teamId: string) {
+    setPending((p) => ({ ...p, [matchId]: null }));
     setPicks((p) => ({ ...p, [matchId]: teamId }));
     start(async () => {
       const res = await saveKnockoutPick(matchId, teamId);
       if (res.ok && res.changed) {
-        setNote((n) => ({ ...n, [matchId]: `Changed — −2 pts (×${res.changeCount})` }));
+        setNote((n) => ({ ...n, [matchId]: `Changed — −${res.cost} pts → loyalty pot 💸` }));
       }
       router.refresh();
     });
@@ -99,7 +113,7 @@ export function KnockoutPicks({ items }: { items: KItem[] }) {
                       return (
                         <button
                           key={t.id}
-                          onClick={() => pick(it.matchId, t.id, it.locked)}
+                          onClick={() => tap(it.matchId, t.id, it.locked, picked)}
                           disabled={it.locked}
                           className={cn(
                             "flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition active:scale-95",
@@ -142,9 +156,18 @@ export function KnockoutPicks({ items }: { items: KItem[] }) {
                       </div>
                     </div>
                   )}
-                  {(note[it.matchId] || it.changeCount > 0) && (
+                  {pending[it.matchId] && (
+                    <ChangeConfirmBar
+                      cost={changePenaltyFor(it.changeCount + 1)}
+                      changeNumber={it.changeCount + 1}
+                      busy={busy}
+                      onConfirm={() => commit(it.matchId, pending[it.matchId]!)}
+                      onCancel={() => setPending((p) => ({ ...p, [it.matchId]: null }))}
+                    />
+                  )}
+                  {!pending[it.matchId] && (note[it.matchId] || it.changeCount > 0) && (
                     <p className="mt-1.5 text-[11px] text-danger">
-                      {note[it.matchId] ?? `Changed ×${it.changeCount} (−${it.changeCount * 2} pts)`}
+                      {note[it.matchId] ?? `Changed ×${it.changeCount} (−${it.penalty ?? 0} pts to loyal rivals)`}
                     </p>
                   )}
                   {it.locked && it.winnerId && (

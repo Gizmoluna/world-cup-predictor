@@ -210,6 +210,9 @@ function rowToUser(r: any): AppUser {
     flag: r.flag,
     avatarUrl: r.avatar_url,
     nationality: r.nationality,
+    homeCountry: r.home_country,
+    adoptedCountry: r.adopted_country,
+    favouriteCountry: r.favourite_country,
     favouriteTeamId: r.favourite_team_id,
     favouritePlayerId: r.favourite_player_id,
     theme: r.theme ?? "carina",
@@ -228,6 +231,9 @@ function userToRow(u: Partial<AppUser>): Record<string, unknown> {
   if (u.flag !== undefined) row.flag = u.flag;
   if (u.avatarUrl !== undefined) row.avatar_url = u.avatarUrl;
   if (u.nationality !== undefined) row.nationality = u.nationality;
+  if (u.homeCountry !== undefined) row.home_country = u.homeCountry;
+  if (u.adoptedCountry !== undefined) row.adopted_country = u.adoptedCountry;
+  if (u.favouriteCountry !== undefined) row.favourite_country = u.favouriteCountry;
   if (u.favouriteTeamId !== undefined) row.favourite_team_id = u.favouriteTeamId;
   if (u.favouritePlayerId !== undefined) row.favourite_player_id = u.favouritePlayerId;
   if (u.theme !== undefined) row.theme = u.theme;

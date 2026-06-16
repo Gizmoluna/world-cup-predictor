@@ -16,6 +16,7 @@ export default async function PredictStandingsPage() {
   ]);
   const teamById = new Map(teams.map((t) => [t.id, t]));
   const orderByGroup = new Map(orders.map((o) => [o.groupName, o.teamIds]));
+  const orderMeta = new Map(orders.map((o) => [o.groupName, o]));
 
   const byGroup = new Map<string, Standing[]>();
   for (const s of standings) {
@@ -34,6 +35,8 @@ export default async function PredictStandingsPage() {
         name,
         decidedOrder: decided ? ordered.map((r) => r.teamId) : null,
         savedOrder: orderByGroup.get(name) ?? [],
+        changeCount: orderMeta.get(name)?.changeCount ?? 0,
+        penalty: orderMeta.get(name)?.penalty ?? 0,
         teams: ordered.map((r) => {
           const t = teamById.get(r.teamId);
           return { id: r.teamId, name: t?.shortName ?? t?.name ?? r.teamId, flagUrl: t?.flagUrl ?? "" };

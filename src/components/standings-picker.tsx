@@ -14,6 +14,8 @@ interface GroupData {
   name: string;
   decidedOrder: string[] | null;
   savedOrder: string[];
+  changeCount?: number;
+  penalty?: number;
   teams: GTeam[];
 }
 
@@ -40,15 +42,23 @@ function GroupRanker({ group }: { group: GroupData }) {
   const router = useRouter();
   const [, start] = useTransition();
   const [order, setOrder] = useState<string[]>(group.savedOrder.filter((id) => group.teams.some((t) => t.id === id)));
+  const [note, setNote] = useState<string>("");
   const teamById = new Map(group.teams.map((t) => [t.id, t]));
   const decided = group.decidedOrder;
+  const hadOrder = group.savedOrder.length === group.teams.length;
 
   function tap(id: string) {
     if (decided) return;
     const next = order.includes(id) ? order.filter((x) => x !== id) : [...order, id];
     setOrder(next);
     if (next.length === group.teams.length) {
-      start(async () => { await saveGroupOrderPick(group.name, next); router.refresh(); });
+      start(async () => {
+        const res = await saveGroupOrderPick(group.name, next);
+        if (res.ok && "changed" in res && res.changed) {
+          setNote(`Re-ranked — −${res.cost} pts → loyalty pot 💸 (small tweaks cost less)`);
+        }
+        router.refresh();
+      });
     }
   }
   function reset() {
@@ -117,8 +127,18 @@ function GroupRanker({ group }: { group: GroupData }) {
           ))}
         </div>
       )}
-      {order.length === group.teams.length && (
-        <p className="mt-2 text-[11px] font-bold text-pitch">Order locked in ✓ (tap a team to change)</p>
+      {hadOrder && order.length < group.teams.length && (
+        <p className="mt-2 text-[11px] font-bold text-danger">
+          ⚠️ Re-ranking a locked order costs points (escalating) — but a small swap costs far less than a full rebuild.
+        </p>
+      )}
+      {note && order.length === group.teams.length && (
+        <p className="mt-2 text-[11px] font-bold text-danger">{note}</p>
+      )}
+      {!note && order.length === group.teams.length && (
+        <p className="mt-2 text-[11px] font-bold text-pitch">
+          Order locked in ✓ (tap a team to change · {group.penalty ? `−${group.penalty} pts so far` : "free until you change"})
+        </p>
       )}
     </div>
   );

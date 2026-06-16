@@ -189,6 +189,9 @@ export interface AppUser {
   flag?: string | null; // emoji flag for arbitrary friends
   avatarUrl?: string | null;
   nationality?: string | null;
+  homeCountry?: string | null; // where you're from
+  adoptedCountry?: string | null; // a second country you back
+  favouriteCountry?: string | null; // the team you support (≠ home)
   favouriteTeamId?: string | null;
   favouritePlayerId?: string | null;
   theme: string; // theme key, e.g. "carina" | "johnny"
@@ -219,6 +222,7 @@ export interface GroupPrediction {
   groupName: string;
   teamId: string;
   changeCount?: number;
+  penalty?: number; // accrued points forfeited from changing this pick
 }
 
 export type DuelStatus = "pending" | "accepted" | "declined";
@@ -239,12 +243,15 @@ export interface KnockoutPrediction {
   teamId: string;
   method?: "90" | "ET" | "PENS" | null; // win method (finals/knockout)
   changeCount?: number;
+  penalty?: number; // accrued points forfeited from changing this pick
 }
 
 export interface GroupOrder {
   userId: UserId;
   groupName: string;
   teamIds: string[]; // predicted finishing order, 1st → last
+  changeCount?: number;
+  penalty?: number; // accrued points forfeited from re-ordering (scaled by edit size)
 }
 
 export interface ChatMessage {

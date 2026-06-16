@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { getLeagueByCode, getLeagueMembers } from "@/lib/leagues";
-import { getUsers } from "@/lib/data";
-import { chrome } from "@/lib/display";
 import { AuthForm } from "@/components/auth-form";
 import { JoinConfirm } from "@/components/join-confirm";
 import { APP_NAME } from "@/lib/constants";
@@ -51,10 +49,7 @@ export default async function JoinPage({
                   <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-muted">
                     Sign up or log in to join
                   </p>
-                  <AuthForm
-                    existing={(await getUsers()).map((u) => ({ name: u.name, flag: chrome(u).flag }))}
-                    joinCode={league.inviteCode}
-                  />
+                  <AuthForm joinCode={league.inviteCode} />
                 </>
               )}
             </div>
