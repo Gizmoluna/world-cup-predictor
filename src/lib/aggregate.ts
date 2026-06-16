@@ -77,11 +77,13 @@ export async function getReadModel(opts?: {
   // scoring from the time they joined (matches before that don't count).
   let restrictIds = opts?.restrictUserIds;
   let eligibleFrom = new Map<string, string>();
+  let leagueMembers: AppUser[] | null = null;
   if (opts?.leagueId) {
     const [members, since] = await Promise.all([
       getLeagueMembers(opts.leagueId),
       getLeagueMemberSince(opts.leagueId),
     ]);
+    leagueMembers = members;
     restrictIds = members.map((m) => m.id);
     eligibleFrom = since;
   }
@@ -89,8 +91,9 @@ export async function getReadModel(opts?: {
     provider.getTeams(),
     provider.getPlayers(),
     provider.getMatches(),
-    getUsers(),
-    getAllPredictions(),
+    // Use the league's members directly (no all-users scan) when scoped.
+    leagueMembers ? Promise.resolve(leagueMembers) : getUsers(),
+    getAllPredictions(restrictIds),
     provider.getStandings(),
     getAllGroupPredictions(),
     getAllKnockoutPredictions(),

@@ -237,7 +237,14 @@ export interface KnockoutPrediction {
   userId: UserId;
   matchId: string;
   teamId: string;
+  method?: "90" | "ET" | "PENS" | null; // win method (finals/knockout)
   changeCount?: number;
+}
+
+export interface GroupOrder {
+  userId: UserId;
+  groupName: string;
+  teamIds: string[]; // predicted finishing order, 1st → last
 }
 
 export interface ChatMessage {

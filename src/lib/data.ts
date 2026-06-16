@@ -152,13 +152,18 @@ export async function ensureUser(user: AppUser): Promise<AppUser> {
   return data ? rowToUser(data) : user;
 }
 
-export async function getAllPredictions(): Promise<Prediction[]> {
+export async function getAllPredictions(userIds?: string[]): Promise<Prediction[]> {
   if (!isSupabaseConfigured()) {
     seedDemoPredictions();
-    return [...demoPredictions.values()];
+    const all = [...demoPredictions.values()];
+    return userIds ? all.filter((p) => userIds.includes(p.userId)) : all;
   }
   const sb = createServiceClient();
-  const { data } = await sb.from("predictions").select("*");
+  // Scope to specific users (e.g. a league's members) so a page never loads
+  // the whole table — this is what keeps it fast as the player base grows.
+  let query = sb.from("predictions").select("*");
+  if (userIds) query = query.in("user_id", userIds.length ? userIds : ["__none__"]);
+  const { data } = await query;
   return (data ?? []).map(rowToPrediction);
 }
 
