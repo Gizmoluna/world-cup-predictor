@@ -86,6 +86,7 @@ export default async function ProfilePage({
     groupCorrect: row?.groupCorrect ?? 0,
     knockoutPoints: row?.knockoutPoints ?? 0,
     winnings: row?.winnings ?? 0,
+    dailyStreak: user.streakCount ?? 0,
   });
 
   // Friends
