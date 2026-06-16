@@ -19,6 +19,7 @@ export default async function SettingsPage() {
   const plainUser = {
     id: user.id,
     name: user.name,
+    flag: user.flag ?? null,
     avatarUrl: user.avatarUrl ?? null,
     nationality: user.nationality ?? null,
     homeCountry: user.homeCountry ?? user.nationality ?? null,

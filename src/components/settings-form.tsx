@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { updateProfile } from "@/app/actions";
-import { PICKER_THEMES } from "@/lib/constants";
+import { PICKER_THEMES, THEMES, DEFAULT_THEME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { PlayerPicker } from "./player-picker";
+import { AvatarUpload } from "./avatar-upload";
 import type { AppUser, Player, Team } from "@/lib/types";
 
 type RosterPlayer = { id: string; name: string; position?: string | null };
@@ -92,6 +93,13 @@ export function SettingsForm({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Profile photo */}
+      <AvatarUpload
+        currentUrl={user.avatarUrl}
+        flag={user.flag || "⚽"}
+        themeGradient={(THEMES[theme] ?? THEMES[DEFAULT_THEME]).gradient}
+      />
+
       {/* Colour theme */}
       <div className="flex flex-col gap-2">
         <label className="text-xs font-bold uppercase tracking-widest text-muted">Colour</label>

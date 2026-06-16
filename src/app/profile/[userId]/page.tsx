@@ -105,10 +105,15 @@ export default async function ProfilePage({
         {/* Header */}
         <div className="flex items-center gap-4">
           <div
-            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl text-4xl shadow-lg"
-            style={{ background: theme.gradient }}
+            className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl text-4xl shadow-lg"
+            style={user.avatarUrl ? undefined : { background: theme.gradient }}
           >
-            {userFlag}
+            {user.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+            ) : (
+              userFlag
+            )}
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-black">{user.name}</h1>
