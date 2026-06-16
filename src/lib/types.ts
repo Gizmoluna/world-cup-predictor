@@ -246,6 +246,30 @@ export interface KnockoutPrediction {
   penalty?: number; // accrued points forfeited from changing this pick
 }
 
+// Whole-league pot on a single match. The winning condition is fixed before
+// kickoff; members opt in by matching the ante; their existing match prediction
+// IS their entry. Closest/correct on the criteria takes the pot (ties split);
+// if nobody qualifies the stakes are refunded.
+export type PotCriteria = "SCORE" | "RESULT" | "FIRST_SCORER";
+export type PotStatus = "open" | "settled" | "void";
+
+export interface WagerPot {
+  id: string;
+  matchId: string;
+  leagueId: string;
+  proposerId: UserId;
+  ante: number;
+  criteria: PotCriteria;
+  status: PotStatus;
+  createdAt?: string;
+}
+
+export interface PotEntry {
+  potId: string;
+  userId: UserId;
+  joinedAt?: string;
+}
+
 export interface GroupOrder {
   userId: UserId;
   groupName: string;

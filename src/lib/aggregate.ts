@@ -186,6 +186,17 @@ export async function getReadModel(opts?: {
     }
   }
 
+  // When was each group decided? Approximate by the latest kickoff among its
+  // matches — used to deny a late joiner futures points that resolved before
+  // they joined the league (no points carried into a group).
+  const groupDecidedAt = new Map<string, number>();
+  for (const m of matches) {
+    if (m.stage === "group" && m.groupName) {
+      const t = new Date(m.kickoffAt).getTime();
+      groupDecidedAt.set(m.groupName, Math.max(groupDecidedAt.get(m.groupName) ?? 0, t));
+    }
+  }
+
   // Who actually engaged with futures (so loyalty only rewards real players).
   const madeFutures = new Set<string>();
   for (const p of groupPreds) madeFutures.add(p.userId);
@@ -193,11 +204,18 @@ export async function getReadModel(opts?: {
   for (const o of groupOrders) madeFutures.add(o.userId);
 
   for (const row of leaderboard) {
+    const from = eligibleFrom?.get(row.user.id);
+    const fromMs = from ? new Date(from).getTime() : null;
+    // A futures result only counts if it resolved at/after this member joined.
+    // If we can't determine the resolution time, fail open (count it).
+    const countsForJoin = (resolvedAtMs: number | undefined) =>
+      fromMs == null || resolvedAtMs == null || resolvedAtMs >= fromMs;
+
     const userOrders = ordersByUser.get(row.user.id) ?? new Map<string, string[]>();
     // Full group-standings predictions (position-based points).
     for (const [g, order] of userOrders) {
       const actual = decidedGroupOrder.get(g);
-      if (actual) {
+      if (actual && countsForJoin(groupDecidedAt.get(g))) {
         const { points, firstCorrect } = scoreGroupOrder(order, actual);
         row.groupPoints += points;
         if (firstCorrect) row.groupCorrect += 1;
@@ -210,7 +228,11 @@ export async function getReadModel(opts?: {
     const gPicks = groupPreds.filter((gp) => gp.userId === row.user.id);
     for (const pick of gPicks) {
       // Don't double-count: skip the winner pick if a full order exists for it.
-      if (!userOrders.has(pick.groupName) && decidedGroupWinners.get(pick.groupName) === pick.teamId) {
+      if (
+        !userOrders.has(pick.groupName) &&
+        decidedGroupWinners.get(pick.groupName) === pick.teamId &&
+        countsForJoin(groupDecidedAt.get(pick.groupName))
+      ) {
         row.groupPoints += POINTS.groupWinner;
         row.groupCorrect += 1;
       }
@@ -218,12 +240,14 @@ export async function getReadModel(opts?: {
     }
     const kPicks = koPreds.filter((kp) => kp.userId === row.user.id);
     for (const pick of kPicks) {
-      if (koWinner.get(pick.matchId) === pick.teamId) {
+      const km = matchById.get(pick.matchId);
+      const resolvedAt = km ? new Date(km.kickoffAt).getTime() : undefined;
+      const eligible = countsForJoin(resolvedAt);
+      if (eligible && koWinner.get(pick.matchId) === pick.teamId) {
         row.knockoutPoints += POINTS.knockoutWinner;
       }
       // Win-method bonus (90 / ET / PENS) once the match is finished.
-      const km = matchById.get(pick.matchId);
-      if (km && km.status === "full_time" && pick.method) {
+      if (eligible && km && km.status === "full_time" && pick.method) {
         const actual = km.shootout ? "PENS" : km.extraTime ? "ET" : "90";
         if (pick.method === actual) row.knockoutPoints += POINTS.winMethod;
       }
