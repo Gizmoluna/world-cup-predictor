@@ -15,6 +15,8 @@ import { MatchTimeline } from "@/components/match-timeline";
 import { PredictionSummary } from "@/components/prediction-summary";
 import { ShareResult } from "@/components/share-result";
 import { DuelChallenge } from "@/components/duel-challenge";
+import { GroupPots, type PotView } from "@/components/group-pots";
+import { getMatchPots, getPotEntries, resolvePot } from "@/lib/pots";
 import { getFriendIds } from "@/lib/friends";
 import { getUsers } from "@/lib/data";
 import { melbourne, isLocked } from "@/lib/time";
@@ -89,6 +91,45 @@ export default async function MatchPage({
     .filter((u) => oppIds.has(u.id))
     .map((u) => ({ id: u.id, name: u.name, flag: chrome(u).flag }));
 
+  // Whole-league pots on this match (propose / join pre-kickoff, results after).
+  const potViews: PotView[] = [];
+  if (league) {
+    const pots = await getMatchPots(id, league.id);
+    for (const p of pots) {
+      const entrantIds = await getPotEntries(p.id);
+      const nameFlag = (uid: string) => {
+        const m = memberById.get(uid);
+        return { name: m?.name ?? uid, flag: m ? chrome(m).flag : "⚽" };
+      };
+      let settled = false;
+      let isVoid = false;
+      let winners: { name: string; flag: string }[] = [];
+      let myPayout: number | null = null;
+      if (finished) {
+        const r = await resolvePot(p);
+        if (r.settled) {
+          settled = true;
+          isVoid = r.void;
+          winners = r.winnerIds.map(nameFlag);
+          myPayout = r.payouts.get(user.id) ?? null;
+        }
+      }
+      potViews.push({
+        id: p.id,
+        ante: p.ante,
+        criteria: p.criteria,
+        proposerName: nameFlag(p.proposerId).name,
+        entrants: entrantIds.map(nameFlag),
+        joined: entrantIds.includes(user.id),
+        settled,
+        isVoid,
+        winners,
+        myPayout,
+      });
+    }
+  }
+  const canPlayPots = Boolean(league && members.length >= 2);
+
   return (
     <AppShell>
       {gotResult && <Confetti dedupeKey={`${id}-${user.id}`} big={bigWin} sound />}
@@ -158,6 +199,12 @@ export default async function MatchPage({
           <div className="mt-2">
             <MatchTimeline events={events} playerById={playerById} teamById={mapToObj(model.teamById)} homeId={home.id} />
           </div>
+        </div>
+      )}
+
+      {(canPlayPots || potViews.length > 0) && (
+        <div className="mb-4">
+          <GroupPots matchId={id} pots={potViews} canPlay={canPlayPots} locked={locked} />
         </div>
       )}
 

@@ -142,6 +142,12 @@ export default function HowItWorksPage() {
               no prediction always loses.
             </li>
             <li>
+              <span className="font-bold text-fg">Group pot:</span> anyone opens a whole-league pot on
+              a match before kickoff and picks how it&apos;s won — correct score, match result or first
+              goalscorer. Rivals match the ante to join; the winner(s) take the pot, ties split it, and
+              if nobody nails it everyone&apos;s refunded.
+            </li>
+            <li>
               <span className="font-bold text-fg">Winnings &amp; debts</span> are tracked per league
               on the Duels page — including a &quot;who owes whom&quot; settle-up list.
             </li>

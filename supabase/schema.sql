@@ -212,6 +212,26 @@ create table if not exists wager_duels (
   created_at timestamptz not null default now()
 );
 
+-- Whole-league pots on a match: proposer + criteria + ante; members opt in.
+create table if not exists wager_pots (
+  id uuid primary key default gen_random_uuid(),
+  match_id text not null,
+  league_id text not null,
+  proposer_id text not null,
+  ante int not null default 10,
+  criteria text not null default 'SCORE',
+  status text not null default 'open',
+  created_at timestamptz not null default now()
+);
+create index if not exists wager_pots_match_idx on wager_pots (match_id, league_id);
+
+create table if not exists pot_entries (
+  pot_id uuid not null references wager_pots(id) on delete cascade,
+  user_id text not null,
+  joined_at timestamptz not null default now(),
+  primary key (pot_id, user_id)
+);
+
 create table if not exists friend_requests (
   from_user text not null,
   to_user text not null,

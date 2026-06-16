@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { SESSION_COOKIE, LEAGUE_COOKIE, getSessionUserId } from "@/lib/session";
+import { SESSION_COOKIE, LEAGUE_COOKIE, getSessionUserId, getActiveLeague } from "@/lib/session";
 import {
   getUser,
   getUserByName,
@@ -39,6 +39,8 @@ import { saveKnockoutPrediction, saveKnockoutMethod } from "@/lib/knockout-predi
 import { saveGroupOrder } from "@/lib/group-orders";
 import { sendFriendRequest, acceptFriend, removeFriend } from "@/lib/friends";
 import { createDuel, setDuelStatus } from "@/lib/duels";
+import { createPot, joinPot } from "@/lib/pots";
+import type { PotCriteria } from "@/lib/types";
 import { getUsers } from "@/lib/data";
 import { chrome } from "@/lib/display";
 import { getProvider } from "@/lib/football-api/provider";
@@ -306,6 +308,30 @@ export async function respondDuelAction(duelId: string, accept: boolean) {
   if (!userId) return { ok: false as const, error: "Not signed in" };
   const res = await setDuelStatus(duelId, userId, accept ? "accepted" : "declined");
   if (!res.ok) return { ok: false as const, error: res.error ?? "Failed." };
+  revalidatePath("/duels");
+  return { ok: true as const };
+}
+
+// --- group pots ------------------------------------------------------------
+
+export async function proposePotAction(matchId: string, ante: number, criteria: PotCriteria) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  const league = await getActiveLeague(userId);
+  if (!league) return { ok: false as const, error: "Join or create a league first." };
+  const res = await createPot(matchId, league.id, userId, ante, criteria);
+  if (!res.ok) return { ok: false as const, error: res.error ?? "Could not open the pot." };
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/duels");
+  return { ok: true as const, potId: res.potId };
+}
+
+export async function joinPotAction(potId: string, matchId: string) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  const res = await joinPot(potId, userId);
+  if (!res.ok) return { ok: false as const, error: res.error ?? "Could not join the pot." };
+  revalidatePath(`/matches/${matchId}`);
   revalidatePath("/duels");
   return { ok: true as const };
 }
