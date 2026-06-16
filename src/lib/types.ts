@@ -221,6 +221,18 @@ export interface GroupPrediction {
   changeCount?: number;
 }
 
+export type DuelStatus = "pending" | "accepted" | "declined";
+
+export interface WagerDuel {
+  id: string;
+  matchId: string;
+  challengerId: UserId;
+  opponentId: UserId;
+  stake: number;
+  status: DuelStatus;
+  createdAt?: string;
+}
+
 export interface KnockoutPrediction {
   userId: UserId;
   matchId: string;
