@@ -88,7 +88,20 @@ export function MatchFilter({
       )}
 
       {filtered.length === 0 && (
-        <p className="py-10 text-center text-sm text-muted">No matches match these filters.</p>
+        <div className="py-12 text-center">
+          <p className="text-3xl">⚽</p>
+          {items.length === 0 ? (
+            <>
+              <p className="mt-2 text-sm font-bold">Fixtures drop soon</p>
+              <p className="mt-1 text-xs text-muted">
+                The schedule loads automatically once it&apos;s published. Set your favourite team in
+                Settings so we surface your group first.
+              </p>
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-muted">No matches match these filters.</p>
+          )}
+        </div>
       )}
 
       {[...byDay.entries()].map(([day, dayItems]) => (
