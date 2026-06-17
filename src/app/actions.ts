@@ -28,6 +28,7 @@ import {
   joinLeague,
   isMember,
   getLeague,
+  getLeagueMembers,
   deleteLeague,
   requestToJoin,
   approveRequest,
@@ -40,8 +41,8 @@ import { saveGroupOrder } from "@/lib/group-orders";
 import { sendFriendRequest, acceptFriend, removeFriend } from "@/lib/friends";
 import { recordSpyReveal, hasRevealed } from "@/lib/spy";
 import { spyFee } from "@/lib/money";
-import { notifyUser } from "@/lib/push";
-import { createDuel, setDuelStatus } from "@/lib/duels";
+import { notifyUser, notifyUsers } from "@/lib/push";
+import { createDuel, setDuelStatus, getUserDuels } from "@/lib/duels";
 import { createPot, joinPot } from "@/lib/pots";
 import type { PotCriteria } from "@/lib/types";
 import { getUsers } from "@/lib/data";
@@ -272,6 +273,12 @@ export async function addFriendAction(targetId: string) {
   if (!userId) return { ok: false as const, error: "Not signed in" };
   const res = await sendFriendRequest(userId, targetId);
   if (!res.ok) return { ok: false as const, error: res.error ?? "Could not send friend request." };
+  const me = await getUser(userId);
+  await notifyUser(targetId, {
+    title: "👋 New friend request",
+    body: `${me?.name ?? "Someone"} wants to be your friend.`,
+    url: "/friends",
+  });
   revalidatePath(`/profile/${targetId}`);
   revalidatePath(`/profile/${userId}`);
   return { ok: true as const };
@@ -281,6 +288,12 @@ export async function acceptFriendAction(fromId: string) {
   const userId = await getSessionUserId();
   if (!userId) return { ok: false as const, error: "Not signed in" };
   await acceptFriend(userId, fromId);
+  const me = await getUser(userId);
+  await notifyUser(fromId, {
+    title: "🤝 Friend request accepted",
+    body: `${me?.name ?? "Someone"} accepted your friend request.`,
+    url: `/profile/${userId}`,
+  });
   revalidatePath(`/profile/${userId}`);
   return { ok: true as const };
 }
@@ -357,6 +370,12 @@ export async function challengeFriendAction(
   if (!userId) return { ok: false as const, error: "Not signed in" };
   const res = await createDuel(matchId, userId, opponentId, stake, mode);
   if (!res.ok) return { ok: false as const, error: res.error ?? "Could not create duel." };
+  const me = await getUser(userId);
+  await notifyUser(opponentId, {
+    title: "⚔️ Duel challenge",
+    body: `${me?.name ?? "A rival"} staked $${stake} against you. Accept?`,
+    url: "/duels",
+  });
   revalidatePath("/duels");
   revalidatePath(`/matches/${matchId}`);
   return { ok: true as const };
@@ -367,6 +386,18 @@ export async function respondDuelAction(duelId: string, accept: boolean) {
   if (!userId) return { ok: false as const, error: "Not signed in" };
   const res = await setDuelStatus(duelId, userId, accept ? "accepted" : "declined");
   if (!res.ok) return { ok: false as const, error: res.error ?? "Failed." };
+  // Tell the challenger how their challenge was answered.
+  const duel = (await getUserDuels(userId)).find((d) => d.id === duelId);
+  if (duel) {
+    const me = await getUser(userId);
+    await notifyUser(duel.challengerId, {
+      title: accept ? "✅ Duel on!" : "❌ Duel declined",
+      body: accept
+        ? `${me?.name ?? "Your rival"} accepted your $${duel.stake} duel. May the best pick win.`
+        : `${me?.name ?? "Your rival"} declined your duel.`,
+      url: "/duels",
+    });
+  }
   revalidatePath("/duels");
   return { ok: true as const };
 }
@@ -380,6 +411,16 @@ export async function proposePotAction(matchId: string, ante: number, criteria: 
   if (!league) return { ok: false as const, error: "Join or create a league first." };
   const res = await createPot(matchId, league.id, userId, ante, criteria);
   if (!res.ok) return { ok: false as const, error: res.error ?? "Could not open the pot." };
+  // Rally the league — everyone but the proposer gets the call to ante up.
+  const [me, members] = await Promise.all([getUser(userId), getLeagueMembers(league.id)]);
+  await notifyUsers(
+    members.map((m) => m.id).filter((mid) => mid !== userId),
+    {
+      title: "🎰 New pot open",
+      body: `${me?.name ?? "Someone"} opened a $${ante} pot in ${league.name}. Match the ante to play.`,
+      url: `/matches/${matchId}`,
+    },
+  );
   revalidatePath(`/matches/${matchId}`);
   revalidatePath("/duels");
   return { ok: true as const, potId: res.potId };
