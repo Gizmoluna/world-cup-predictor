@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export interface PickRow {
@@ -28,39 +29,56 @@ export function PickHistory({ rows, emptyNote }: { rows: PickRow[]; emptyNote: s
   }
   return (
     <div className="flex flex-col gap-2">
-      {rows.map((r) => (
-        <div key={r.matchId} className="flex items-center gap-2 rounded-xl bg-surface-2 p-3 text-sm">
-          <div className="flex min-w-0 flex-1 items-center gap-1.5">
-            <Flag url={r.homeFlag} />
-            <span className="truncate font-semibold">{r.home}</span>
-            <span className="text-muted">v</span>
-            <span className="truncate font-semibold">{r.away}</span>
-            <Flag url={r.awayFlag} />
-          </div>
-          {r.hidden ? (
-            <span className="shrink-0 text-[11px] text-muted">🔒 hidden until kickoff</span>
-          ) : (
-            <div className="flex shrink-0 items-center gap-2">
-              <span className="num-bc text-base">
-                {r.predHome ?? "–"}–{r.predAway ?? "–"}
-              </span>
-              {r.actual && (
-                <span className="text-[11px] text-muted">act {r.actual}</span>
-              )}
-              {r.points != null && (
-                <span
-                  className={cn(
-                    "num-bc rounded-md px-1.5 py-0.5 text-xs",
-                    r.points > 0 ? "bg-pitch/20 text-pitch" : "bg-white/8 text-muted",
-                  )}
-                >
-                  {r.points > 0 ? `+${r.points}` : "0"}
-                </span>
-              )}
+      {rows.map((r) => {
+        const inner = (
+          <>
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+              <Flag url={r.homeFlag} />
+              <span className="truncate font-semibold">{r.home}</span>
+              <span className="text-muted">v</span>
+              <span className="truncate font-semibold">{r.away}</span>
+              <Flag url={r.awayFlag} />
             </div>
-          )}
-        </div>
-      ))}
+            {r.hidden ? (
+              <span className="shrink-0 text-[11px] text-muted">🔒 hidden until kickoff</span>
+            ) : (
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="num-bc text-base">
+                  {r.predHome ?? "–"}–{r.predAway ?? "–"}
+                </span>
+                {r.actual && (
+                  <span className="text-[11px] text-muted">act {r.actual}</span>
+                )}
+                {r.points != null && (
+                  <span
+                    className={cn(
+                      "num-bc rounded-md px-1.5 py-0.5 text-xs",
+                      r.points > 0 ? "bg-pitch/20 text-pitch" : "bg-white/8 text-muted",
+                    )}
+                  >
+                    {r.points > 0 ? `+${r.points}` : "0"}
+                  </span>
+                )}
+              </div>
+            )}
+          </>
+        );
+        // Finished/locked picks tap through to the match — where the full
+        // points breakdown for every player lives. Hidden upcoming picks don't.
+        return r.hidden ? (
+          <div key={r.matchId} className="flex items-center gap-2 rounded-xl bg-surface-2 p-3 text-sm">
+            {inner}
+          </div>
+        ) : (
+          <Link
+            key={r.matchId}
+            href={`/matches/${r.matchId}`}
+            className="flex items-center gap-2 rounded-xl bg-surface-2 p-3 text-sm transition active:scale-[0.99]"
+          >
+            {inner}
+          </Link>
+        );
+      })}
     </div>
   );
 }

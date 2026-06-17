@@ -186,7 +186,14 @@ export default async function ProfilePage({
         {/* Friends list */}
         {friends.length > 0 && (
           <Card className="flex flex-col gap-2">
-            <CardTitle>Friends</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Friends</CardTitle>
+              {isSelf && (
+                <Link href="/friends" className="text-xs font-bold text-[var(--accent)]">
+                  See all →
+                </Link>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               {friends.map((f) => (
                 <Link

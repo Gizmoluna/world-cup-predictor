@@ -25,6 +25,30 @@ export function PredictionSummary({
   const teamName = (id?: string | null) =>
     id === home.id ? home.shortName : id === away.id ? away.shortName : id === "none" ? "None" : "—";
 
+  // What each point actually came from — so you can see *why* someone scored,
+  // e.g. "🥅 First scorer: Messi +4". Only non-zero categories are listed.
+  const breakdown: { icon: string; label: string; pts: number }[] = [];
+  if (score) {
+    const add = (pts: number, icon: string, label: string) => {
+      if (pts > 0) breakdown.push({ icon, label, pts });
+    };
+    add(score.exactScorePoints, "🎯", `Exact score ${prediction.predictedHomeScore ?? "–"}–${prediction.predictedAwayScore ?? "–"}`);
+    add(score.resultPoints, "✅", "Correct result");
+    add(score.goalDifferencePoints, "➗", "Goal difference");
+    add(score.totalGoalsPoints, "🔢", "Total goals");
+    add(score.firstTeamScorePoints, "⚡", `First to score: ${teamName(prediction.firstTeamToScoreId)}`);
+    add(score.bttsPoints, "🤝", `Both teams to score: ${prediction.bothTeamsToScore ? "Yes" : "No"}`);
+    add(score.cleanSheetPoints, "🧤", "Clean sheet");
+    add(score.firstGoalScorerPoints, "🥅", `First scorer: ${name(prediction.firstGoalScorerId)}`);
+    add(score.anytimeGoalScorerPoints, "⚽", `Anytime scorer: ${name(prediction.anytimeGoalScorerId)}`);
+    add(score.playerOfMatchPoints, "⭐", `Player of the match: ${name(prediction.playerOfMatchId)}`);
+    add(score.cardPoints, "🟨", "Cards");
+    add(score.penaltyPoints, "🎲", "Penalty called");
+    add(score.shootoutPoints, "🥅", "Shootout winner");
+    add(score.bonusPoints, "✨", "Bonus");
+  }
+  const boosted = score ? (score.multiplier ?? 1) > 1 : false;
+
   const lines: [string, string][] = [
     ["Score", `${prediction.predictedHomeScore ?? "–"}–${prediction.predictedAwayScore ?? "–"}`],
     ["First to score", teamName(prediction.firstTeamToScoreId)],
@@ -72,6 +96,39 @@ export function PredictionSummary({
             <span className={cn("font-bold", score.wagerProfit >= 0 ? "text-pitch" : "text-danger")}>
               {score.wagerProfit >= 0 ? "+" : "−"}${Math.abs(score.wagerProfit)}
             </span>
+          )}
+        </div>
+      )}
+
+      {score && (
+        <div className="mt-3 rounded-xl bg-surface-2 p-3">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted">
+            How they scored
+          </p>
+          {breakdown.length === 0 ? (
+            <p className="text-xs text-muted">No points from this match — better luck next time.</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {breakdown.map((b) => (
+                <li key={b.label} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span>{b.icon}</span>
+                    <span className="truncate font-medium">{b.label}</span>
+                  </span>
+                  <span className="num-bc shrink-0 rounded-md bg-pitch/20 px-1.5 py-0.5 text-pitch">
+                    +{b.pts}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {boosted && breakdown.length > 0 && (
+            <div className="mt-2 flex items-center justify-between border-t border-border/50 pt-2 text-xs">
+              <span className="font-semibold text-gold">
+                {score!.subtotal} × {score!.multiplier} confidence boost
+              </span>
+              <span className="num-bc font-black text-[var(--accent)]">= {score!.totalPoints}</span>
+            </div>
           )}
         </div>
       )}
