@@ -74,7 +74,7 @@ export function EnableNotifications() {
       )}
     >
       <Bell size={16} />
-      {state === "denied" ? "Blocked — allow in browser settings" : state === "busy" ? "Enabling…" : "Enable match reminders"}
+      {state === "denied" ? "Blocked — allow in browser settings" : state === "busy" ? "Enabling…" : "Enable notifications"}
     </button>
   );
 }

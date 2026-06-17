@@ -86,8 +86,14 @@ async function sendOne(sub: StoredSub, payload: Payload) {
 
 /** Push a one-off notification to every device a single user has registered. */
 export async function notifyUser(userId: string, payload: Payload): Promise<number> {
-  if (!ensureVapid()) return 0;
-  const subs = (await getAllSubscriptions()).filter((s) => s.userId === userId);
+  return notifyUsers([userId], payload);
+}
+
+/** Push the same notification to every device of several users in one pass. */
+export async function notifyUsers(userIds: string[], payload: Payload): Promise<number> {
+  if (!ensureVapid() || userIds.length === 0) return 0;
+  const want = new Set(userIds);
+  const subs = (await getAllSubscriptions()).filter((s) => want.has(s.userId));
   let sent = 0;
   for (const sub of subs) {
     await sendOne(sub, payload);

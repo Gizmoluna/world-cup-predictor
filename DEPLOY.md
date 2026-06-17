@@ -42,9 +42,16 @@ no API key**. (Optional: for more complete player stats you can later switch to
    NEXT_PUBLIC_SUPABASE_URL=<from step 1>
    NEXT_PUBLIC_SUPABASE_ANON_KEY=<from step 1>
    SUPABASE_SERVICE_ROLE_KEY=<from step 1>
+   NEXT_PUBLIC_VAPID_PUBLIC_KEY=BPXAp3DlNH108wQkKNBmCLwixIpol7iAkkx_axWR56zSJKHZkx9URFF7JQShnGb1dKJOdGuuePSvfSBqk1yE4BY
+   VAPID_PRIVATE_KEY=-xq2Qt-rX5rxRvPBjb34bcWi0_aGZGSk8kY6kuSA8_8
+   VAPID_SUBJECT=mailto:johnardara@gmail.com
    ```
-   > These secrets were generated for you; keep them private. Regenerate anytime
-   > with `openssl rand -hex 32`.
+   > These secrets were generated for you; keep them private. Regenerate the
+   > session/cron secrets with `openssl rand -hex 32`, the VAPID push keys with
+   > `npx web-push generate-vapid-keys`.
+   > **Push notifications** (friend requests, duel challenges, pots, spy alerts)
+   > only fire once the three `VAPID_*` vars are set — without them the app runs
+   > fine but stays silent.
 
 3. **Deploy**. You'll get a URL like `https://world-cup-predictor.vercel.app`.
 4. Data is fetched **live on every visit** (≤60s fresh), so no cron is required.
