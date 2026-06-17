@@ -84,6 +84,18 @@ async function sendOne(sub: StoredSub, payload: Payload) {
   }
 }
 
+/** Push a one-off notification to every device a single user has registered. */
+export async function notifyUser(userId: string, payload: Payload): Promise<number> {
+  if (!ensureVapid()) return 0;
+  const subs = (await getAllSubscriptions()).filter((s) => s.userId === userId);
+  let sent = 0;
+  for (const sub of subs) {
+    await sendOne(sub, payload);
+    sent++;
+  }
+  return sent;
+}
+
 /**
  * Daily nudge: tell each subscriber how many of today's matches still need
  * their prediction. Returns a summary.

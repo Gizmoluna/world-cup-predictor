@@ -38,8 +38,9 @@ import { saveGroupPrediction } from "@/lib/group-predictions";
 import { saveKnockoutPrediction, saveKnockoutMethod } from "@/lib/knockout-predictions";
 import { saveGroupOrder } from "@/lib/group-orders";
 import { sendFriendRequest, acceptFriend, removeFriend } from "@/lib/friends";
-import { recordSpyReveal } from "@/lib/spy";
+import { recordSpyReveal, hasRevealed } from "@/lib/spy";
 import { spyFee } from "@/lib/money";
+import { notifyUser } from "@/lib/push";
 import { createDuel, setDuelStatus } from "@/lib/duels";
 import { createPot, joinPot } from "@/lib/pots";
 import type { PotCriteria } from "@/lib/types";
@@ -313,16 +314,33 @@ export async function spyRevealAction(targetId: string, matchId: string) {
     return { ok: true as const, fee: 0, alreadyVisible: true };
   }
 
+  // Already paid? Re-revealing is free and changes nothing (keeps the snapshot).
+  if (await hasRevealed(userId, targetId, matchId)) {
+    return { ok: true as const, fee: 0 };
+  }
+
   const fee = spyFee(match.kickoffAt);
   const league = await getActiveLeague(userId);
+  // Freeze the rival's pick as it stands right now — you keep what you paid for.
+  const snapshot = await getUserPrediction(targetId, matchId);
   const res = await recordSpyReveal({
     buyerId: userId,
     targetId,
     matchId,
     leagueId: league?.id ?? null,
     fee,
+    snapshot,
   });
   if (!res.ok) return { ok: false as const, error: res.error ?? "Could not buy the reveal." };
+
+  // Tell the spied player — adds tension and they can't be quietly scouted.
+  const spy = await getUser(userId);
+  await notifyUser(targetId, {
+    title: "🤭 A chismosa is watching",
+    body: `${spy?.name ?? "A rival"} paid $${fee} to peek at your pick — what a chismosa.`,
+    url: `/matches/${matchId}`,
+  });
+
   revalidatePath(`/matches/${matchId}`);
   return { ok: true as const, fee };
 }

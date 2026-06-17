@@ -265,6 +265,7 @@ create table if not exists spy_reveals (
   match_id text not null,
   league_id text,
   fee integer not null default 0,
+  snapshot jsonb,
   created_at timestamptz not null default now(),
   primary key (buyer_id, target_id, match_id)
 );

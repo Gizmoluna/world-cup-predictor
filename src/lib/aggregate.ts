@@ -27,6 +27,7 @@ import { calculatePredictionScore } from "@/lib/scoring/calculatePredictionScore
 import { POINTS } from "@/lib/scoring/points";
 import { buildLeaderboard, groupDecisionTimes, type ScoredMatch, type LeaderboardRow } from "@/lib/scoring/leaderboard";
 import { getBalances, STARTING_BALANCE } from "@/lib/money";
+import { getSpyPot } from "@/lib/spy";
 import type { Standing } from "@/lib/types";
 
 // Re-exported so existing callers keep importing these from "@/lib/aggregate".
@@ -261,6 +262,15 @@ export async function getReadModel(opts?: {
   );
   for (const row of leaderboard) {
     row.balance = balances.get(row.user.id)?.total ?? STARTING_BALANCE + row.winnings;
+  }
+
+  // Spy Pot settlement: once the tournament is over, the league's points leader
+  // is awarded the whole Spy Pot (escrow of every spy fee paid by its members).
+  // Only meaningful in a league context — the pot is a per-league prize.
+  if (opts?.leagueId && matches.length > 0 && matches.every((m) => m.status === "full_time")) {
+    const champion = leaderboard[0]; // already sorted by points desc
+    const pot = await getSpyPot(opts.leagueId);
+    if (champion && pot > 0) champion.balance = (champion.balance ?? STARTING_BALANCE) + pot;
   }
 
   return {

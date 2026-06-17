@@ -157,7 +157,12 @@ export default function HowItWorksPage() {
 
         {/* SPYING — the new mechanic, explained on its own. */}
         <Card id="spying" className="flex flex-col gap-3">
-          <CardTitle>🕵️ Spying on picks</CardTitle>
+          <CardTitle>🤭 Spying on picks</CardTitle>
+          <p className="text-sm text-muted">
+            Pay to peek at a rival&apos;s hidden pick and you earn a title:{" "}
+            <span className="font-bold text-fg">chismosa</span> 🤭 — and everyone, especially your
+            target, gets to know it.
+          </p>
           <ul className="space-y-1.5 text-xs text-muted">
             <li>
               <span className="font-bold text-fg">Picks are hidden until kickoff.</span> Your own
@@ -187,9 +192,14 @@ export default function HowItWorksPage() {
               the winner.
             </li>
             <li>
-              <span className="font-bold text-fg">You&apos;re told when you&apos;re spied.</span>{" "}
-              Reveals are one-off (pay once per pick) and free once the match kicks off — past picks
-              are always visible to everyone.
+              <span className="font-bold text-fg">You see it frozen.</span> A spy shows the pick
+              exactly as it stood when you paid — if they edit it later, that&apos;s their gamble,
+              not yours.
+            </li>
+            <li>
+              <span className="font-bold text-fg">You&apos;re told when you&apos;re spied</span>{" "}
+              (a notification). Reveals are one-off (pay once per pick) and free once the match kicks
+              off — past picks are always visible to everyone.
             </li>
           </ul>
         </Card>

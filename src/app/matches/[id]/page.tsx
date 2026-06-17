@@ -19,7 +19,7 @@ import { LiveRefresher } from "@/components/live-refresher";
 import { GroupPots, type PotView } from "@/components/group-pots";
 import { getMatchPots, getPotEntries, resolvePot } from "@/lib/pots";
 import { getFriendIds } from "@/lib/friends";
-import { getRevealKeysForBuyer, getSpyCountOnTarget, getSpyPot } from "@/lib/spy";
+import { getBuyerRevealsForMatch, getSpyCountOnTarget, getSpyPot } from "@/lib/spy";
 import { spyFee } from "@/lib/money";
 import { SpyButton } from "@/components/spy-button";
 import { getUsers } from "@/lib/data";
@@ -83,7 +83,9 @@ export default async function MatchPage({
 
   // Spying — only relevant before kickoff, while rivals' picks are still hidden.
   // The fee climbs as kickoff nears and is paid into the league Spy Pot.
-  const revealKeys = locked ? new Set<string>() : await getRevealKeysForBuyer(user.id);
+  const revealedSnapshots = locked
+    ? new Map<string, typeof myPred>()
+    : await getBuyerRevealsForMatch(user.id, id);
   const currentSpyFee = spyFee(match.kickoffAt);
   const spyPot = league && !locked ? await getSpyPot(league.id) : 0;
   const spiesOnMe = locked ? 0 : await getSpyCountOnTarget(user.id, id);
@@ -233,9 +235,9 @@ export default async function MatchPage({
 
           {spiesOnMe > 0 && (
             <Card className="mb-4 flex items-center gap-3 ring-1 ring-[var(--accent)]/40">
-              <span className="text-2xl">👀</span>
+              <span className="text-2xl">🤭</span>
               <p className="text-sm font-semibold">
-                {spiesOnMe} rival{spiesOnMe > 1 ? "s have" : " has"} paid to see your pick. Make it count.
+                {spiesOnMe} chismosa{spiesOnMe > 1 ? "s have" : " has"} paid to see your pick. Make it count.
               </p>
             </Card>
           )}
@@ -267,14 +269,18 @@ export default async function MatchPage({
               </div>
               <p className="text-xs text-muted">
                 Hidden until kickoff. Spy one now for <span className="font-bold text-fg">${currentSpyFee}</span> —
-                the fee rises as kickoff nears and drops into the Spy Pot.
+                the fee rises as kickoff nears and drops into the Spy Pot. You see their pick frozen
+                at the moment you spy it. Fair warning: you&apos;ll be branded a{" "}
+                <span className="font-bold text-fg">chismosa 🤭</span> and they&apos;ll be told.
               </p>
               {members
                 .filter((m) => m.id !== user.id && preds.some((p) => p.userId === m.id))
                 .map((m) => {
                   const c = chrome(memberById.get(m.id) ?? m);
-                  if (revealKeys.has(`${id}:${m.id}`)) {
-                    const pred = preds.find((p) => p.userId === m.id)!;
+                  if (revealedSnapshots.has(m.id)) {
+                    // Show the frozen snapshot you paid for (fall back to live if
+                    // an older reveal has no snapshot stored).
+                    const pred = revealedSnapshots.get(m.id) ?? preds.find((p) => p.userId === m.id)!;
                     return (
                       <PredictionSummary
                         key={m.id}

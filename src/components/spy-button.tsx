@@ -65,8 +65,9 @@ export function SpyButton({
         <button
           onClick={() => setConfirming(true)}
           className="flex shrink-0 items-center gap-1.5 rounded-xl bg-white/8 px-3 py-2 text-sm font-bold transition active:scale-95"
+          title="Pay to peek — you'll be a chismosa 🤭"
         >
-          🕵️ Spy · ${fee}
+          🤭 Spy · ${fee}
         </button>
       )}
       {err && <span className="text-[10px] font-bold text-danger">{err}</span>}

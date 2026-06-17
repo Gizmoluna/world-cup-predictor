@@ -5,6 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import "server-only";
+import type { Prediction } from "@/lib/types";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createServiceClient } from "@/lib/supabase/server";
 
@@ -14,6 +15,9 @@ export interface SpyReveal {
   matchId: string;
   leagueId: string | null;
   fee: number;
+  /** The rival's pick frozen at purchase time — you keep what you paid to see,
+   *  even if they edit it afterwards. */
+  snapshot?: Prediction | null;
   createdAt?: string;
 }
 
@@ -27,6 +31,7 @@ function rowTo(r: any): SpyReveal {
     matchId: r.match_id,
     leagueId: r.league_id,
     fee: r.fee,
+    snapshot: r.snapshot ?? null,
     createdAt: r.created_at,
   };
 }
@@ -55,6 +60,7 @@ export async function recordSpyReveal(rev: SpyReveal): Promise<{ ok: boolean; er
     match_id: rev.matchId,
     league_id: rev.leagueId,
     fee: rev.fee,
+    snapshot: rev.snapshot ?? null,
   });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
@@ -69,6 +75,22 @@ export async function hasRevealed(buyerId: string, targetId: string, matchId: st
 export async function getRevealKeysForBuyer(buyerId: string): Promise<Set<string>> {
   const rows = await all();
   return new Set(rows.filter((r) => r.buyerId === buyerId).map((r) => `${r.matchId}:${r.targetId}`));
+}
+
+/**
+ * For one match, the picks this buyer has unlocked: targetId → the frozen
+ * snapshot of that rival's prediction at the moment it was spied.
+ */
+export async function getBuyerRevealsForMatch(
+  buyerId: string,
+  matchId: string,
+): Promise<Map<string, Prediction | null>> {
+  const rows = await all();
+  const m = new Map<string, Prediction | null>();
+  for (const r of rows) {
+    if (r.buyerId === buyerId && r.matchId === matchId) m.set(r.targetId, r.snapshot ?? null);
+  }
+  return m;
 }
 
 /** How many rivals have paid to see this player's pick on this match. */

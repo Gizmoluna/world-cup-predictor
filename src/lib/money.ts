@@ -73,7 +73,7 @@ export async function getBalances(
       wagers,
       duels,
       pots,
-      spy: -spent,
+      spy: spent ? -spent : 0, // avoid -0
       total: STARTING_BALANCE + wagers + duels + pots - spent,
     });
   }
