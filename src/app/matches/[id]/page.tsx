@@ -24,6 +24,8 @@ import { spyFee } from "@/lib/money";
 import { getMatchDuels, resolveDuel } from "@/lib/duels";
 import { SpyButton } from "@/components/spy-button";
 import { MatchBets, type WagerRow, type DuelRow } from "@/components/match-bets";
+import { findDerbies, teamNameIndex } from "@/lib/derby";
+import { DerbyBanner, type DerbyView } from "@/components/derby-banner";
 import { getUsers } from "@/lib/data";
 import { melbourne, isLocked } from "@/lib/time";
 import { chrome } from "@/lib/display";
@@ -105,6 +107,49 @@ export default async function MatchPage({
   const duelFriends = allUsers
     .filter((u) => oppIds.has(u.id))
     .map((u) => ({ id: u.id, name: u.name, flag: chrome(u).flag }));
+
+  // Homeland derby: is this match a clash between two friends' countries? Look
+  // across you, your league and your friends for anyone tied to each side.
+  const derbyPeople = [user, ...members, ...allUsers.filter((u) => friendIds.includes(u.id))].filter(
+    (u, i, arr) => arr.findIndex((x) => x.id === u.id) === i,
+  );
+  const derbyUserById = new Map(derbyPeople.map((u) => [u.id, u]));
+  const derbyPairs = findDerbies(
+    { homeTeamId: match.homeTeamId, awayTeamId: match.awayTeamId },
+    derbyPeople,
+    teamNameIndex(model.teams),
+  );
+  let derbyWinnerSide: "home" | "away" | "draw" | null = null;
+  if (finished) {
+    const hs = match.homeScore ?? 0;
+    const as = match.awayScore ?? 0;
+    if (hs > as || match.shootoutWinnerTeamId === match.homeTeamId) derbyWinnerSide = "home";
+    else if (as > hs || match.shootoutWinnerTeamId === match.awayTeamId) derbyWinnerSide = "away";
+    else derbyWinnerSide = "draw";
+  }
+  const derbyViews: DerbyView[] = derbyPairs.map((p) => {
+    const h = chrome(derbyUserById.get(p.homeUserId)!);
+    const a = chrome(derbyUserById.get(p.awayUserId)!);
+    return {
+      homeUserId: p.homeUserId,
+      homeName: h.name,
+      homeUserFlag: h.flag,
+      homeTeam: home.shortName ?? home.name,
+      homeTeamFlag: home.flagUrl,
+      awayUserId: p.awayUserId,
+      awayName: a.name,
+      awayUserFlag: a.flag,
+      awayTeam: away.shortName ?? away.name,
+      awayTeamFlag: away.flagUrl,
+    };
+  });
+  const viewerWonDerby =
+    finished &&
+    derbyViews.some(
+      (d) =>
+        (derbyWinnerSide === "home" && d.homeUserId === user.id) ||
+        (derbyWinnerSide === "away" && d.awayUserId === user.id),
+    );
 
   // Whole-league pots on this match (propose / join pre-kickoff, results after).
   const potViews: PotView[] = [];
@@ -191,6 +236,14 @@ export default async function MatchPage({
     <AppShell>
       <LiveRefresher active={live} />
       {gotResult && <Confetti dedupeKey={`${id}-${user.id}`} big={bigWin} sound />}
+      {viewerWonDerby && <Confetti dedupeKey={`derby-${id}-${user.id}`} big sound />}
+
+      <DerbyBanner
+        derbies={derbyViews}
+        status={match.status}
+        winnerSide={derbyWinnerSide}
+        viewerId={user.id}
+      />
 
       <div className="glass mb-4 p-5">
         <div className="mb-3 flex items-center justify-between text-[11px] font-bold uppercase tracking-wide text-muted">

@@ -4,6 +4,9 @@ import { requireUser, getActiveLeague } from "@/lib/session";
 import { getLeagueMembers } from "@/lib/leagues";
 import { getReadModel } from "@/lib/aggregate";
 import { getProvider } from "@/lib/football-api/provider";
+import { getFriendIds } from "@/lib/friends";
+import { getUsers } from "@/lib/data";
+import { findDerbies, teamNameIndex } from "@/lib/derby";
 import { AppShell } from "@/components/app-shell";
 import { MatchCard, type Predictor } from "@/components/match-card";
 import { HeroMatch } from "@/components/hero-match";
@@ -48,6 +51,34 @@ export default async function DashboardPage() {
   );
 
   const me = model.leaderboard.find((r) => r.user.id === user.id);
+
+  // Homeland derby radar: the next upcoming/live match where two friends'
+  // countries collide. Surfaced prominently so nobody misses the grudge match.
+  const friendIds = await getFriendIds(user.id);
+  const allUsers = await getUsers();
+  const derbyPeople = [user, ...members, ...allUsers.filter((u) => friendIds.includes(u.id))].filter(
+    (u, i, arr) => arr.findIndex((x) => x.id === u.id) === i,
+  );
+  const derbyNameById = new Map(derbyPeople.map((u) => [u.id, u.name]));
+  const derbyIdx = teamNameIndex(model.teams);
+  const derbyMatch = [...model.matches]
+    .filter((m) => m.status === "upcoming" || m.status === "live")
+    .sort((a, b) => +new Date(a.kickoffAt) - +new Date(b.kickoffAt))
+    .map((m) => {
+      const pairs = findDerbies({ homeTeamId: m.homeTeamId, awayTeamId: m.awayTeamId }, derbyPeople, derbyIdx);
+      if (pairs.length === 0) return null;
+      const p = pairs[0];
+      return {
+        id: m.id,
+        live: m.status === "live",
+        homeName: derbyNameById.get(p.homeUserId) ?? "",
+        awayName: derbyNameById.get(p.awayUserId) ?? "",
+        homeTeam: model.teamById.get(m.homeTeamId)?.shortName ?? "",
+        awayTeam: model.teamById.get(m.awayTeamId)?.shortName ?? "",
+        extra: pairs.length - 1,
+      };
+    })
+    .find(Boolean);
 
   // Featured match: live first, else the soonest upcoming.
   const sorted = [...model.matches].sort((a, b) => +new Date(a.kickoffAt) - +new Date(b.kickoffAt));
@@ -112,6 +143,30 @@ export default async function DashboardPage() {
             <span className="text-2xl">🍀</span>
             <p className="text-sm font-semibold">You&apos;re all locked in. Good luck.</p>
           </Card>
+        )}
+
+        {derbyMatch && (
+          <Link
+            href={`/matches/${derbyMatch.id}`}
+            className="glass block overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/20 via-surface to-danger/15 p-4 transition active:scale-[0.99]"
+          >
+            <div className="flex items-center justify-between">
+              <span className="title-bc text-sm text-gold">🔥 Homeland Derby</span>
+              {derbyMatch.live ? (
+                <span className="rounded-full bg-danger/25 px-2 py-0.5 text-[10px] font-black text-danger">● LIVE</span>
+              ) : (
+                <span className="text-[10px] font-bold uppercase tracking-wide text-muted">bragging rights on the line</span>
+              )}
+            </div>
+            <p className="mt-1 text-sm font-bold">
+              {derbyMatch.homeName} ({derbyMatch.homeTeam}) 🆚 {derbyMatch.awayName} ({derbyMatch.awayTeam})
+            </p>
+            <p className="mt-0.5 text-xs text-muted">
+              {derbyMatch.live ? "It's on right now — " : "Two friends, two countries — "}
+              {derbyMatch.extra > 0 ? `+${derbyMatch.extra} more clash${derbyMatch.extra > 1 ? "es" : ""} · ` : ""}
+              tap to take sides 👀
+            </p>
+          </Link>
         )}
 
         {!league && (
