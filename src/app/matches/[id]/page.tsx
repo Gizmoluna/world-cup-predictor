@@ -21,7 +21,9 @@ import { getMatchPots, getPotEntries, resolvePot } from "@/lib/pots";
 import { getFriendIds } from "@/lib/friends";
 import { getBuyerRevealsForMatch, getSpyCountOnTarget, getSpyPot } from "@/lib/spy";
 import { spyFee } from "@/lib/money";
+import { getMatchDuels, resolveDuel } from "@/lib/duels";
 import { SpyButton } from "@/components/spy-button";
+import { MatchBets, type WagerRow, type DuelRow } from "@/components/match-bets";
 import { getUsers } from "@/lib/data";
 import { melbourne, isLocked } from "@/lib/time";
 import { chrome } from "@/lib/display";
@@ -142,6 +144,48 @@ export default async function MatchPage({
     }
   }
   const canPlayPots = Boolean(league && members.length >= 2);
+
+  // Bets riding on this match — solo wagers + head-to-head duels. Surfaced once
+  // the match is locked (live or finished): live shows "in play", finished shows
+  // who won and lost. Computed only when relevant to keep pre-kickoff light.
+  let betWagers: WagerRow[] = [];
+  let betDuels: DuelRow[] = [];
+  if (locked) {
+    betWagers = ordered.flatMap((m) => {
+      const pred = preds.find((p) => p.userId === m.id);
+      const stake = pred?.wagerAmount ?? 0;
+      if (!pred || stake <= 0) return [];
+      const c = chrome(memberById.get(m.id) ?? m);
+      const sc = scores.find((s) => s.userId === m.id);
+      return [{ name: c.name, flag: c.flag, stake, profit: finished && sc ? sc.wagerProfit : null }];
+    });
+    const matchDuels = (await getMatchDuels(id)).filter(
+      (d) =>
+        d.status === "accepted" &&
+        memberIds.has(d.challengerId) &&
+        memberIds.has(d.opponentId),
+    );
+    betDuels = await Promise.all(
+      matchDuels.map(async (d) => {
+        const o = await resolveDuel(d);
+        const a = chrome(memberById.get(d.challengerId)!);
+        const b = chrome(memberById.get(d.opponentId)!);
+        const winnerName =
+          o.settled && o.winnerId ? chrome(memberById.get(o.winnerId)!).name : null;
+        return {
+          aName: a.name,
+          aFlag: a.flag,
+          bName: b.name,
+          bFlag: b.flag,
+          stake: d.stake,
+          mode: o.mode,
+          settled: o.settled,
+          winnerName,
+          amount: Math.abs(o.challengerNet),
+        } as DuelRow;
+      }),
+    );
+  }
 
   return (
     <AppShell>
@@ -310,6 +354,9 @@ export default async function MatchPage({
         </>
       ) : (
         <div className="flex flex-col gap-4">
+          {(betWagers.length > 0 || betDuels.length > 0) && (
+            <MatchBets wagers={betWagers} duels={betDuels} live={live} />
+          )}
           <CardTitle>Predictions {finished ? "& points" : "(locked)"}</CardTitle>
           {ordered.map((m) => {
             const pred = preds.find((p) => p.userId === m.id);
