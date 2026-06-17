@@ -38,6 +38,8 @@ import { saveGroupPrediction } from "@/lib/group-predictions";
 import { saveKnockoutPrediction, saveKnockoutMethod } from "@/lib/knockout-predictions";
 import { saveGroupOrder } from "@/lib/group-orders";
 import { sendFriendRequest, acceptFriend, removeFriend } from "@/lib/friends";
+import { recordSpyReveal } from "@/lib/spy";
+import { spyFee } from "@/lib/money";
 import { createDuel, setDuelStatus } from "@/lib/duels";
 import { createPot, joinPot } from "@/lib/pots";
 import type { PotCriteria } from "@/lib/types";
@@ -289,6 +291,40 @@ export async function removeFriendAction(otherId: string) {
   revalidatePath(`/profile/${userId}`);
   revalidatePath(`/profile/${otherId}`);
   return { ok: true as const };
+}
+
+// --- spying ----------------------------------------------------------------
+
+/**
+ * Pay to reveal a rival's hidden upcoming pick. The fee (which climbs as kickoff
+ * nears) is computed server-side from the real kickoff and paid into the active
+ * league's Spy Pot. Once kickoff passes the pick is free to view, so we never
+ * charge for that. Idempotent — re-spying the same pick is free.
+ */
+export async function spyRevealAction(targetId: string, matchId: string) {
+  const userId = await getSessionUserId();
+  if (!userId) return { ok: false as const, error: "Not signed in" };
+  if (targetId === userId) return { ok: false as const, error: "That's your own pick." };
+
+  const match = await getProvider().getMatch(matchId);
+  if (!match) return { ok: false as const, error: "Match not found." };
+  // After kickoff everything is visible for free — nothing to buy.
+  if (match.status !== "upcoming" || isLocked(match.kickoffAt, new Date())) {
+    return { ok: true as const, fee: 0, alreadyVisible: true };
+  }
+
+  const fee = spyFee(match.kickoffAt);
+  const league = await getActiveLeague(userId);
+  const res = await recordSpyReveal({
+    buyerId: userId,
+    targetId,
+    matchId,
+    leagueId: league?.id ?? null,
+    fee,
+  });
+  if (!res.ok) return { ok: false as const, error: res.error ?? "Could not buy the reveal." };
+  revalidatePath(`/matches/${matchId}`);
+  return { ok: true as const, fee };
 }
 
 // --- friend-vs-friend duels ------------------------------------------------

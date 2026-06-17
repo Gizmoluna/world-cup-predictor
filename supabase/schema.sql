@@ -257,6 +257,18 @@ create table if not exists push_subscriptions (
   created_at timestamptz not null default now()
 );
 
+-- A player paid to reveal a rival's hidden upcoming pick. Fee funds the league
+-- Spy Pot. One row per (buyer, target, match) — buyers only ever pay once.
+create table if not exists spy_reveals (
+  buyer_id text not null,
+  target_id text not null,
+  match_id text not null,
+  league_id text,
+  fee integer not null default 0,
+  created_at timestamptz not null default now(),
+  primary key (buyer_id, target_id, match_id)
+);
+
 create index if not exists predictions_match_idx on predictions(match_id);
 create index if not exists predictions_user_idx on predictions(user_id);
 create index if not exists messages_league_idx on messages(league_id, created_at);
@@ -271,6 +283,9 @@ create index if not exists wager_duels_challenger_idx on wager_duels(challenger_
 create index if not exists wager_duels_opponent_idx on wager_duels(opponent_id);
 create index if not exists wager_duels_match_idx on wager_duels(match_id);
 create index if not exists league_members_user_idx on league_members(user_id);
+create index if not exists spy_reveals_buyer_idx on spy_reveals(buyer_id);
+create index if not exists spy_reveals_target_match_idx on spy_reveals(target_id, match_id);
+create index if not exists spy_reveals_league_idx on spy_reveals(league_id);
 
 -- RLS on, no public policies (service-role key bypasses it).
 alter table teams enable row level security;
@@ -292,3 +307,4 @@ alter table join_requests enable row level security;
 alter table friend_requests enable row level security;
 alter table wager_duels enable row level security;
 alter table push_subscriptions enable row level security;
+alter table spy_reveals enable row level security;

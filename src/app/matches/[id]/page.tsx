@@ -19,6 +19,9 @@ import { LiveRefresher } from "@/components/live-refresher";
 import { GroupPots, type PotView } from "@/components/group-pots";
 import { getMatchPots, getPotEntries, resolvePot } from "@/lib/pots";
 import { getFriendIds } from "@/lib/friends";
+import { getRevealKeysForBuyer, getSpyCountOnTarget, getSpyPot } from "@/lib/spy";
+import { spyFee } from "@/lib/money";
+import { SpyButton } from "@/components/spy-button";
 import { getUsers } from "@/lib/data";
 import { melbourne, isLocked } from "@/lib/time";
 import { chrome } from "@/lib/display";
@@ -77,6 +80,13 @@ export default async function MatchPage({
   };
   const memberById = new Map<string, AppUser>(members.map((m) => [m.id, m]));
   const otherPredicted = preds.filter((p) => p.userId !== user.id).length;
+
+  // Spying — only relevant before kickoff, while rivals' picks are still hidden.
+  // The fee climbs as kickoff nears and is paid into the league Spy Pot.
+  const revealKeys = locked ? new Set<string>() : await getRevealKeysForBuyer(user.id);
+  const currentSpyFee = spyFee(match.kickoffAt);
+  const spyPot = league && !locked ? await getSpyPot(league.id) : 0;
+  const spiesOnMe = locked ? 0 : await getSpyCountOnTarget(user.id, id);
 
   // Order: me first, then other members.
   const ordered = [user, ...members.filter((m) => m.id !== user.id)];
@@ -216,12 +226,19 @@ export default async function MatchPage({
             <Lock size={18} className="text-[var(--accent)]" />
             <p className="text-xs text-muted">
               Locks at kickoff · {otherPredicted > 0
-                ? myPred
-                  ? `${otherPredicted} rival${otherPredicted > 1 ? "s" : ""} locked in — revealed below 👇`
-                  : `${otherPredicted} rival${otherPredicted > 1 ? "s" : ""} locked in (predict to reveal 👀)`
+                ? `${otherPredicted} rival${otherPredicted > 1 ? "s" : ""} locked in — hidden until kickoff (spy below 🕵️)`
                 : "no one else has predicted yet"}
             </p>
           </Card>
+
+          {spiesOnMe > 0 && (
+            <Card className="mb-4 flex items-center gap-3 ring-1 ring-[var(--accent)]/40">
+              <span className="text-2xl">👀</span>
+              <p className="text-sm font-semibold">
+                {spiesOnMe} rival{spiesOnMe > 1 ? "s have" : " has"} paid to see your pick. Make it count.
+              </p>
+            </Card>
+          )}
           <div className="mb-4">
             <DuelChallenge matchId={id} friends={duelFriends} />
           </div>
@@ -235,27 +252,50 @@ export default async function MatchPage({
             existing={myPred}
           />
 
-          {/* Once you've locked in, you've shown your hand — so you get to see
-              your rivals' picks too, even before kickoff. */}
-          {myPred && otherPredicted > 0 && (
-            <div className="mt-5 flex flex-col gap-4">
-              <CardTitle>Rivals&apos; picks 👀 · you&apos;re locked in</CardTitle>
+          {/* Rivals' picks stay hidden until kickoff. Pay the fee (into the Spy
+              Pot) to reveal one early — locking in your own pick no longer
+              reveals theirs for free. */}
+          {otherPredicted > 0 && (
+            <div className="mt-5 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <CardTitle>Rivals&apos; picks 🔒</CardTitle>
+                {league && (
+                  <span className="rounded-full bg-white/8 px-2.5 py-1 text-[11px] font-bold text-muted">
+                    🕵️ Spy Pot ${spyPot}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted">
+                Hidden until kickoff. Spy one now for <span className="font-bold text-fg">${currentSpyFee}</span> —
+                the fee rises as kickoff nears and drops into the Spy Pot.
+              </p>
               {members
                 .filter((m) => m.id !== user.id && preds.some((p) => p.userId === m.id))
                 .map((m) => {
-                  const pred = preds.find((p) => p.userId === m.id)!;
                   const c = chrome(memberById.get(m.id) ?? m);
+                  if (revealKeys.has(`${id}:${m.id}`)) {
+                    const pred = preds.find((p) => p.userId === m.id)!;
+                    return (
+                      <PredictionSummary
+                        key={m.id}
+                        displayName={`${c.name} · 🕵️ spied`}
+                        flag={c.flag}
+                        prediction={pred}
+                        score={undefined}
+                        home={home}
+                        away={away}
+                        playerById={playerById}
+                        winner={false}
+                      />
+                    );
+                  }
                   return (
-                    <PredictionSummary
+                    <SpyButton
                       key={m.id}
-                      displayName={c.name}
-                      flag={c.flag}
-                      prediction={pred}
-                      score={undefined}
-                      home={home}
-                      away={away}
-                      playerById={playerById}
-                      winner={false}
+                      targetId={m.id}
+                      targetName={c.name}
+                      matchId={id}
+                      fee={currentSpyFee}
                     />
                   );
                 })}

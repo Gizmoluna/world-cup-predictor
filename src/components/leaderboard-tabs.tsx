@@ -21,6 +21,7 @@ interface Row {
   currentStreak: number;
   avgConfidenceAccuracy: number;
   winnings: number;
+  balance: number;
 }
 
 type Scope = "overall" | "group" | "knockout" | "daily" | "global";
@@ -175,8 +176,8 @@ function RankRow({
         <p className="text-[11px] text-muted">
           {rank.icon} {rank.title} · {r.matchWins}W·{r.matchDraws}D·{r.matchLosses}L · {r.exactScores} exact
         </p>
-        <p className={cn("text-[11px] font-bold", r.winnings >= 0 ? "text-pitch" : "text-danger")}>
-          {r.winnings >= 0 ? "+" : "−"}${Math.abs(r.winnings)} bankroll
+        <p className="text-[11px] font-bold text-gold">
+          💰 ${r.balance.toLocaleString()} bank
         </p>
       </div>
       <div className="text-right">

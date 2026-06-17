@@ -53,6 +53,31 @@ export async function getLeaguePots(leagueId: string): Promise<WagerPot[]> {
   return (data ?? []).map(rowToPot);
 }
 
+export async function getAllPots(): Promise<WagerPot[]> {
+  if (!isSupabaseConfigured()) return demoPots;
+  const sb = createServiceClient();
+  const { data } = await sb.from("wager_pots").select("*");
+  return (data ?? []).map(rowToPot);
+}
+
+/**
+ * Net group-pot P&L per user across all settled pots. `potPayouts` is already
+ * net (winners get share−ante, losers −ante, void 0), so we just sum it.
+ */
+export async function getPotNetByUsers(userIds: string[]): Promise<Map<string, number>> {
+  const idSet = new Set(userIds);
+  const net = new Map<string, number>();
+  for (const pot of await getAllPots()) {
+    const r = await resolvePot(pot);
+    if (!r.settled) continue;
+    for (const uid of r.entrantIds) {
+      if (!idSet.has(uid)) continue;
+      net.set(uid, (net.get(uid) ?? 0) + (r.payouts.get(uid) ?? 0));
+    }
+  }
+  return net;
+}
+
 export async function getPotEntries(potId: string): Promise<string[]> {
   if (!isSupabaseConfigured()) {
     return demoEntries.filter((e) => e.potId === potId).map((e) => e.userId);

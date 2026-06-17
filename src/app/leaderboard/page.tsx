@@ -30,6 +30,7 @@ function serialize(rows: LeaderboardRow[]) {
     currentStreak: r.currentStreak,
     avgConfidenceAccuracy: r.avgConfidenceAccuracy,
     winnings: r.winnings,
+    balance: r.balance ?? 1000 + r.winnings,
   }));
 }
 

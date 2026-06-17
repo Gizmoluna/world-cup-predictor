@@ -48,6 +48,9 @@ export interface LeaderboardRow {
   currentStreak: number; // +n win streak, -n loss streak
   avgConfidenceAccuracy: number; // 0..100
   winnings: number; // cumulative fake-money profit/loss ($)
+  /** Full bank balance ($1000 start + wagers + duels + pots − spy). Set by the
+   *  read model after building; undefined when balance isn't being computed. */
+  balance?: number;
   groupPoints: number; // points from correct group-winner picks
   groupCorrect: number; // count of correct group-winner picks
   knockoutPoints: number; // points from correct knockout-winner picks

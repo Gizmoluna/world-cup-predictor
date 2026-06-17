@@ -3,6 +3,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { POINTS, changeCost } from "@/lib/scoring/points";
 import { GROUP_ORDER_POINTS, GROUP_ORDER_PERFECT_BONUS } from "@/lib/group-orders";
 import { RANK_TIERS } from "@/lib/constants";
+import { STARTING_BALANCE, SPY_FEES } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
 
@@ -123,6 +124,72 @@ export default function HowItWorksPage() {
             <li>
               <span className="font-bold text-fg">Match predictions are free to change</span> right
               up to kickoff — the penalty only applies to the tournament/futures picks above.
+            </li>
+          </ul>
+        </Card>
+
+        {/* THE MONEY MODEL — one balance, four games, plainly stated. */}
+        <Card id="the-bank" className="flex flex-col gap-3 ring-1 ring-gold/30">
+          <CardTitle>💰 The Bank — how money works</CardTitle>
+          <p className="text-sm text-muted">
+            Money is separate from points. Points decide the ladder; money is a play-money side
+            game. Everyone starts with exactly{" "}
+            <span className="font-bold text-gold">${STARTING_BALANCE.toLocaleString()}</span>, and
+            just <span className="font-bold text-fg">four things</span> ever move your balance:
+          </p>
+          <div className="rounded-xl bg-surface-2 p-3 text-center text-xs">
+            <span className="num-bc text-sm text-fg">balance</span>
+            <span className="text-muted"> = ${STARTING_BALANCE.toLocaleString()} + wagers + duels + pots − spy fees</span>
+          </div>
+          <ul className="space-y-1.5 text-xs text-muted">
+            <li><span className="font-bold text-fg">Wagers</span> — stake on your own match pick (below).</li>
+            <li><span className="font-bold text-fg">Duels</span> — head-to-head stakes vs a rival (below).</li>
+            <li><span className="font-bold text-fg">Pots</span> — whole-league side pots on a match (below).</li>
+            <li>
+              <span className="font-bold text-fg">Spying</span> — see a hidden pick early, for a price.
+            </li>
+          </ul>
+          <p className="text-sm text-muted">
+            Your <span className="font-bold text-fg">balance is the same number everywhere</span> —
+            leaderboard, your profile, the duels ledger. There&apos;s no second hidden wallet.
+          </p>
+        </Card>
+
+        {/* SPYING — the new mechanic, explained on its own. */}
+        <Card id="spying" className="flex flex-col gap-3">
+          <CardTitle>🕵️ Spying on picks</CardTitle>
+          <ul className="space-y-1.5 text-xs text-muted">
+            <li>
+              <span className="font-bold text-fg">Picks are hidden until kickoff.</span> Your own
+              picks, and everyone else&apos;s, stay secret right up to the whistle.
+            </li>
+            <li>
+              <span className="font-bold text-fg">Pay to peek.</span> Spend from your balance to
+              reveal one rival&apos;s upcoming pick early. The fee climbs as kickoff nears:
+            </li>
+          </ul>
+          <div className="flex items-center gap-2">
+            {[
+              { label: "24h+ out", fee: SPY_FEES.far },
+              { label: "2–24h", fee: SPY_FEES.mid },
+              { label: "< 2h", fee: SPY_FEES.near },
+            ].map((t) => (
+              <div key={t.label} className="flex-1 rounded-xl bg-surface-2 p-2 text-center">
+                <div className="text-[10px] uppercase tracking-wide text-muted">{t.label}</div>
+                <div className="num-bc text-lg text-gold">${t.fee}</div>
+              </div>
+            ))}
+          </div>
+          <ul className="space-y-1.5 text-xs text-muted">
+            <li>
+              <span className="font-bold text-pitch">The Spy Pot.</span> Every fee paid drops into
+              your league&apos;s Spy Pot — it goes to the league champion at the end. Spying funds
+              the winner.
+            </li>
+            <li>
+              <span className="font-bold text-fg">You&apos;re told when you&apos;re spied.</span>{" "}
+              Reveals are one-off (pay once per pick) and free once the match kicks off — past picks
+              are always visible to everyone.
             </li>
           </ul>
         </Card>

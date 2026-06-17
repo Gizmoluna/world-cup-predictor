@@ -26,6 +26,7 @@ import { buildMatchResult } from "@/lib/scoring/buildMatchResult";
 import { calculatePredictionScore } from "@/lib/scoring/calculatePredictionScore";
 import { POINTS } from "@/lib/scoring/points";
 import { buildLeaderboard, groupDecisionTimes, type ScoredMatch, type LeaderboardRow } from "@/lib/scoring/leaderboard";
+import { getBalances, STARTING_BALANCE } from "@/lib/money";
 import type { Standing } from "@/lib/types";
 
 // Re-exported so existing callers keep importing these from "@/lib/aggregate".
@@ -251,6 +252,17 @@ export async function getReadModel(opts?: {
   }
   leaderboard.sort((a, b) => b.points - a.points);
 
+  // --- bank balances --------------------------------------------------------
+  // One play-money balance per player, from every game (wagers already in
+  // row.winnings; duels/pots/spy folded in by getBalances). Single source of
+  // truth so the leaderboard, profiles and duels ledger all agree.
+  const balances = await getBalances(
+    new Map(leaderboard.map((r) => [r.user.id, r.winnings])),
+  );
+  for (const row of leaderboard) {
+    row.balance = balances.get(row.user.id)?.total ?? STARTING_BALANCE + row.winnings;
+  }
+
   return {
     teams,
     players,
@@ -294,6 +306,7 @@ export interface GlobalLeaderboardRow {
   currentStreak: number;
   avgConfidenceAccuracy: number;
   winnings: number;
+  balance: number;
 }
 
 const GLOBAL_LEADERBOARD_CAP = 100;
@@ -314,6 +327,7 @@ function serializeGlobalRow(r: LeaderboardRow): GlobalLeaderboardRow {
     currentStreak: r.currentStreak,
     avgConfidenceAccuracy: r.avgConfidenceAccuracy,
     winnings: r.winnings,
+    balance: r.balance ?? STARTING_BALANCE + r.winnings,
   };
 }
 

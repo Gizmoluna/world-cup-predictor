@@ -15,6 +15,7 @@ import { LevelBar } from "@/components/level-bar";
 import { AchievementsGrid } from "@/components/achievements-grid";
 import { PickHistory, type PickRow } from "@/components/pick-history";
 import { computeAchievements } from "@/lib/achievements";
+import { getBalances, STARTING_BALANCE } from "@/lib/money";
 import { THEMES, DEFAULT_THEME, rival } from "@/lib/constants";
 import { isLocked } from "@/lib/time";
 import { chrome } from "@/lib/display";
@@ -75,6 +76,9 @@ export default async function ProfilePage({
   const accuracy = played > 0 ? Math.round((exactScores / played) * 100) : 0;
 
   const uniqueBadges = Array.from(new Set(row?.badges ?? []));
+
+  // Full bank balance + where it came from — the money model, laid bare.
+  const bal = (await getBalances(new Map([[user.id, row?.winnings ?? 0]]))).get(user.id);
 
   const achievements = computeAchievements({
     points: row?.points ?? 0,
@@ -261,6 +265,43 @@ export default async function ProfilePage({
         <Card className="flex flex-col gap-3">
           <CardTitle>Achievements</CardTitle>
           <AchievementsGrid achievements={achievements} />
+        </Card>
+
+        {/* Bank balance — the money model in one place */}
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <CardTitle>💰 Bank balance</CardTitle>
+            <span className="num-bc text-2xl text-gold">
+              ${(bal?.total ?? STARTING_BALANCE).toLocaleString()}
+            </span>
+          </div>
+          <div className="divide-y divide-border text-sm">
+            {[
+              ["Starting bankroll", bal?.starting ?? STARTING_BALANCE, false],
+              ["Match wagers", bal?.wagers ?? 0, true],
+              ["Duels", bal?.duels ?? 0, true],
+              ["Group pots", bal?.pots ?? 0, true],
+              ["Spying on rivals", bal?.spy ?? 0, true],
+            ].map(([label, val, signed]) => {
+              const n = val as number;
+              return (
+                <div key={label as string} className="flex items-center justify-between py-2">
+                  <span className="text-muted">{label}</span>
+                  <span
+                    className={cn(
+                      "num-bc font-semibold",
+                      !signed ? "text-fg" : n > 0 ? "text-pitch" : n < 0 ? "text-danger" : "text-muted",
+                    )}
+                  >
+                    {signed ? (n >= 0 ? "+" : "−") : ""}${Math.abs(n).toLocaleString()}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <Link href="/how-it-works" className="text-xs font-bold text-[var(--accent)]">
+            How the bank works →
+          </Link>
         </Card>
 
         {/* Prediction stats */}
