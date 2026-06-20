@@ -14,6 +14,7 @@ import { LevelBar } from "@/components/level-bar";
 import { StreakBadge } from "@/components/streak-badge";
 import { CelebrateProgress } from "@/components/celebrate-progress";
 import { LiveRefresher } from "@/components/live-refresher";
+import { CarinaCharm } from "@/components/carina-charm";
 import { Card, CardTitle } from "@/components/ui/card";
 import { computeAchievements } from "@/lib/achievements";
 import { rankProgress } from "@/lib/constants";
@@ -123,6 +124,10 @@ export default async function DashboardPage() {
           </h1>
           {league && <p className="text-sm text-muted">{league.name}</p>}
         </div>
+
+        {(user.id === "carina" || user.name?.toLowerCase() === "carina") && (
+          <CarinaCharm lazy={need > 0} />
+        )}
 
         {/* ── ONE primary call-to-action ─────────────────────────────── */}
         {need > 0 ? (

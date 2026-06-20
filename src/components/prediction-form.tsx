@@ -230,6 +230,14 @@ export function PredictionForm({
             </button>
           ))}
         </div>
+        {userId === "carina" && (
+          <button
+            onClick={() => set({ wagerAmount: Math.max(0, (p.wagerAmount ?? 0) - 25) })}
+            className="mt-2 w-full rounded-lg bg-gold/20 py-2 text-xs font-black text-gold transition active:scale-95"
+          >
+            💸 Very cheaper
+          </button>
+        )}
       </Section>
 
       <Section title="Confidence boost" hint="multiplies this match · once per round">
