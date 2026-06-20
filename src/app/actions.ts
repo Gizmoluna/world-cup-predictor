@@ -53,14 +53,16 @@ import type { AppUser, ConfidenceMultiplier, Prediction } from "@/lib/types";
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
-async function setSessionCookie(userId: string, remember: boolean) {
+async function setSessionCookie(userId: string, _remember: boolean) {
   const store = await cookies();
+  // Always persist for a year — this is a friends PWA, nobody should be made to
+  // re-enter their PIN because the browser closed. (_remember kept for callers.)
   store.set(SESSION_COOKIE, signSession(userId), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    ...(remember ? { maxAge: ONE_YEAR } : {}),
+    maxAge: ONE_YEAR,
   });
 }
 
