@@ -4,6 +4,7 @@ import { getUser } from "@/lib/data";
 import { getReadModel } from "@/lib/aggregate";
 import { AppShell } from "@/components/app-shell";
 import { HeadToHead, type H2HRow } from "@/components/head-to-head";
+import { AiBlurb } from "@/components/ai-blurb";
 import { chrome } from "@/lib/display";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +72,9 @@ export default async function VersusPage({
   return (
     <AppShell>
       <h1 className="title-bc mb-4 text-3xl">You vs {oc.name}</h1>
+      <div className="mb-4">
+        <AiBlurb endpoint={`/api/ai/banter?opponentId=${opponentId}`} label="Trash talk" icon="🎤" />
+      </div>
       <HeadToHead
         me={{ name: user.name, flag: chrome(user).flag }}
         opp={{ name: oc.name, flag: oc.flag }}

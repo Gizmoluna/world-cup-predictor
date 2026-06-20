@@ -28,6 +28,7 @@ import { SpyButton } from "@/components/spy-button";
 import { MatchBets, type WagerRow, type DuelRow } from "@/components/match-bets";
 import { liveStandings } from "@/lib/live";
 import { LiveMatchCenter, type LiveRow } from "@/components/live-match-center";
+import { AiBlurb } from "@/components/ai-blurb";
 import { findDerbies, teamNameIndex } from "@/lib/derby";
 import { DerbyBanner, type DerbyView } from "@/components/derby-banner";
 import { getUsers } from "@/lib/data";
@@ -374,6 +375,9 @@ export default async function MatchPage({
           )}
           <div className="mb-4">
             <WinProbability prob={winProb} homeName={home.shortName ?? home.name} awayName={away.shortName ?? away.name} />
+          </div>
+          <div className="mb-4">
+            <AiBlurb endpoint={`/api/ai/preview?matchId=${id}`} label="AI preview" icon="🔮" />
           </div>
           <div className="mb-4">
             <DuelChallenge matchId={id} friends={duelFriends} />

@@ -46,6 +46,7 @@ no API key**. (Optional: for more complete player stats you can later switch to
    VAPID_PRIVATE_KEY=-xq2Qt-rX5rxRvPBjb34bcWi0_aGZGSk8kY6kuSA8_8
    VAPID_SUBJECT=mailto:johnardara@gmail.com
    RESEND_API_KEY=<from resend.com — optional, for password-reset emails>
+   ANTHROPIC_API_KEY=<from console.anthropic.com — optional, for AI previews & banter>
    ```
    > **Password-reset emails** need `RESEND_API_KEY` (free at resend.com). Without
    > it the reset flow still works but shows the link on-screen instead of emailing
