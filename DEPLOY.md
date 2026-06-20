@@ -45,7 +45,12 @@ no API key**. (Optional: for more complete player stats you can later switch to
    NEXT_PUBLIC_VAPID_PUBLIC_KEY=BPXAp3DlNH108wQkKNBmCLwixIpol7iAkkx_axWR56zSJKHZkx9URFF7JQShnGb1dKJOdGuuePSvfSBqk1yE4BY
    VAPID_PRIVATE_KEY=-xq2Qt-rX5rxRvPBjb34bcWi0_aGZGSk8kY6kuSA8_8
    VAPID_SUBJECT=mailto:johnardara@gmail.com
+   RESEND_API_KEY=<from resend.com — optional, for password-reset emails>
    ```
+   > **Password-reset emails** need `RESEND_API_KEY` (free at resend.com). Without
+   > it the reset flow still works but shows the link on-screen instead of emailing
+   > it. Also re-run `supabase/schema.sql` once — it adds the `password_resets`
+   > table (idempotent, never drops data).
    > These secrets were generated for you; keep them private. Regenerate the
    > session/cron secrets with `openssl rand -hex 32`, the VAPID push keys with
    > `npx web-push generate-vapid-keys`.

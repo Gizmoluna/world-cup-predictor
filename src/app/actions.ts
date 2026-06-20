@@ -1,12 +1,13 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE, LEAGUE_COOKIE, getSessionUserId, getActiveLeague } from "@/lib/session";
 import {
   getUser,
   getUserByName,
+  getUserByEmail,
   getCredential,
   setCredential,
   clearCredential,
@@ -39,6 +40,8 @@ import { saveGroupPrediction } from "@/lib/group-predictions";
 import { saveKnockoutPrediction, saveKnockoutMethod } from "@/lib/knockout-predictions";
 import { saveGroupOrder } from "@/lib/group-orders";
 import { sendFriendRequest, acceptFriend, removeFriend } from "@/lib/friends";
+import { createResetToken, getResetUserId, consumeResetToken } from "@/lib/password-reset";
+import { sendEmail, resetEmailHtml, emailConfigured } from "@/lib/email";
 import { recordSpyReveal, hasRevealed } from "@/lib/spy";
 import { spyFee } from "@/lib/money";
 import { notifyUser, notifyUsers } from "@/lib/push";
@@ -83,8 +86,11 @@ async function maybeJoin(userId: string, joinCode?: string) {
 
 // --- auth: name + PIN/password -------------------------------------------
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function signUp(input: {
   name: string;
+  email: string;
   secret: string;
   flag?: string;
   theme?: string;
@@ -92,23 +98,71 @@ export async function signUp(input: {
   joinCode?: string;
 }) {
   const name = input.name.trim();
+  const email = input.email.trim().toLowerCase();
   if (name.length < 2) return { ok: false as const, error: "Pick a name (2+ characters)." };
+  if (!EMAIL_RE.test(email)) return { ok: false as const, error: "Enter a valid email — it's how you reset your PIN." };
   const min = minSecretLength(name);
   if (input.secret.length < min)
     return { ok: false as const, error: `Password must be at least ${min} letters or numbers.` };
   if (await getUserByName(name))
     return { ok: false as const, error: "That name is taken — try another or log in." };
+  if (await getUserByEmail(email))
+    return { ok: false as const, error: "That email already has an account — log in or reset your PIN." };
 
   const id = slugId(name);
   await ensureUser({
     id,
     name,
+    email,
     flag: input.flag || "⚽",
     theme: input.theme || DEFAULT_THEME,
   });
   await setCredential(id, hashSecret(input.secret));
   await setSessionCookie(id, input.remember ?? true);
   await maybeJoin(id, input.joinCode);
+  redirect("/dashboard");
+}
+
+/**
+ * Start a PIN reset: find the account by name OR email, mint a token, and email
+ * a reset link. Always returns ok (never reveals whether an account exists). In
+ * dev / when email isn't configured, the link is returned so it's still usable.
+ */
+export async function requestPasswordReset(identifier: string) {
+  const id = identifier.trim();
+  if (!id) return { ok: true as const };
+  const user = EMAIL_RE.test(id) ? await getUserByEmail(id) : await getUserByName(id);
+  if (!user) return { ok: true as const }; // don't leak existence
+
+  const token = await createResetToken(user.id);
+  const origin = (await headers()).get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const link = `${origin}/reset/${token}`;
+
+  let devLink: string | undefined;
+  if (user.email && emailConfigured()) {
+    await sendEmail({
+      to: user.email,
+      subject: "Reset your World Cup Predictor PIN",
+      html: resetEmailHtml(user.name, link),
+    });
+  } else {
+    // No email configured (or no address) → surface the link so reset still works.
+    devLink = link;
+  }
+  return { ok: true as const, devLink };
+}
+
+/** Finish a PIN reset: validate the token, set the new secret, burn the token. */
+export async function resetPassword(token: string, newSecret: string) {
+  const userId = await getResetUserId(token);
+  if (!userId) return { ok: false as const, error: "This reset link is invalid or has expired." };
+  const user = await getUser(userId);
+  const min = minSecretLength(user?.name ?? userId);
+  if (newSecret.length < min)
+    return { ok: false as const, error: `Password must be at least ${min} letters or numbers.` };
+  await setCredential(userId, hashSecret(newSecret));
+  await consumeResetToken(token);
+  await setSessionCookie(userId, true);
   redirect("/dashboard");
 }
 

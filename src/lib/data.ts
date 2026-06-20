@@ -108,6 +108,18 @@ export async function getUserByName(name: string): Promise<AppUser | null> {
   return data ? rowToUser(data) : null;
 }
 
+/** Find a user by email (case-insensitive). */
+export async function getUserByEmail(email: string): Promise<AppUser | null> {
+  const norm = email.trim().toLowerCase();
+  if (!norm) return null;
+  if (!isSupabaseConfigured()) {
+    return [...demoUsers.values()].find((u) => u.email?.toLowerCase() === norm) ?? null;
+  }
+  const sb = createServiceClient();
+  const { data } = await sb.from("users").select("*").ilike("email", norm).maybeSingle();
+  return data ? rowToUser(data) : null;
+}
+
 /** Read a user's stored credential hash (pin/password), or null if unclaimed. */
 export async function getCredential(userId: string): Promise<string | null> {
   if (!isSupabaseConfigured()) return demoCreds.get(userId) ?? null;

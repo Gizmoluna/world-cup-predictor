@@ -270,6 +270,14 @@ create table if not exists spy_reveals (
   primary key (buyer_id, target_id, match_id)
 );
 
+-- One-time, expiring tokens for the email password-reset flow.
+create table if not exists password_resets (
+  token text primary key,
+  user_id text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists predictions_match_idx on predictions(match_id);
 create index if not exists predictions_user_idx on predictions(user_id);
 create index if not exists messages_league_idx on messages(league_id, created_at);
@@ -309,3 +317,4 @@ alter table friend_requests enable row level security;
 alter table wager_duels enable row level security;
 alter table push_subscriptions enable row level security;
 alter table spy_reveals enable row level security;
+alter table password_resets enable row level security;

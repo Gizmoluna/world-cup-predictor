@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { Eye, EyeOff, X } from "lucide-react";
-import { logIn, signUp } from "@/app/actions";
+import { logIn, signUp, requestPasswordReset } from "@/app/actions";
 import { Button } from "./ui/button";
 import { FLAG_OPTIONS, PICKER_THEMES, DEFAULT_THEME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -37,9 +37,11 @@ function rememberAccount(acc: KnownAccount) {
 
 export function AuthForm({ joinCode }: { joinCode?: string }) {
   const [known, setKnown] = useState<KnownAccount[]>([]);
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [secret, setSecret] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
   const [show, setShow] = useState(false);
   const [flag, setFlag] = useState("⚽");
   const [theme, setTheme] = useState(DEFAULT_THEME);
@@ -69,6 +71,21 @@ export function AuthForm({ joinCode }: { joinCode?: string }) {
 
   function submit() {
     setError(null);
+    setNotice(null);
+
+    if (mode === "forgot") {
+      start(async () => {
+        const r = await requestPasswordReset(name || email);
+        if (r.devLink) {
+          // No email service configured — surface the link so reset still works.
+          setNotice(`Email isn't set up yet — use this reset link: ${r.devLink}`);
+        } else {
+          setNotice("If that account exists, a reset link is on its way to your email. 📧");
+        }
+      });
+      return;
+    }
+
     if (mode === "signup" && secret.length < SIGNUP_MIN) {
       setError(`Password must be at least ${SIGNUP_MIN} letters or numbers.`);
       return;
@@ -80,7 +97,7 @@ export function AuthForm({ joinCode }: { joinCode?: string }) {
       const res =
         mode === "login"
           ? await logIn({ name, secret, remember, joinCode })
-          : await signUp({ name, secret, flag, theme, remember, joinCode });
+          : await signUp({ name, email, secret, flag, theme, remember, joinCode });
       // On success the action redirects; only errors return here.
       if (res && !res.ok) setError(res.error);
     });
@@ -134,17 +151,30 @@ export function AuthForm({ joinCode }: { joinCode?: string }) {
         </div>
       )}
 
-      <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-muted">Name</label>
+      <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-muted">
+        {mode === "forgot" ? "Username or email" : "Username"}
+      </label>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Your name"
+        placeholder={mode === "forgot" ? "Your username or email" : "Your username"}
         autoComplete="username"
+        onKeyDown={(e) => e.key === "Enter" && mode === "forgot" && submit()}
         className="mb-4 h-12 w-full rounded-xl border border-border bg-surface-2 px-4 text-base outline-none focus:border-[var(--accent)]"
       />
 
       {mode === "signup" && (
         <>
+          <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-muted">Email</label>
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            type="email"
+            placeholder="you@email.com"
+            autoComplete="email"
+            className="mb-4 h-12 w-full rounded-xl border border-border bg-surface-2 px-4 text-base outline-none focus:border-[var(--accent)]"
+          />
+
           <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-muted">Your flag</label>
           <div className="no-scrollbar mb-4 flex gap-1.5 overflow-x-auto pb-1">
             {FLAG_OPTIONS.map((f) => (
@@ -182,29 +212,39 @@ export function AuthForm({ joinCode }: { joinCode?: string }) {
         </>
       )}
 
-      <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-muted">
-        {mode === "signup" ? "Choose a password" : "PIN or password"}
-      </label>
-      <div className="relative mb-4">
-        <input
-          value={secret}
-          onChange={(e) => setSecret(e.target.value)}
-          type={show ? "text" : "password"}
-          inputMode="text"
-          placeholder={mode === "signup" ? "Choose a PIN or password" : "Your PIN or password"}
-          autoComplete={mode === "signup" ? "new-password" : "current-password"}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-          className="h-12 w-full rounded-xl border border-border bg-surface-2 px-4 pr-12 text-base outline-none focus:border-[var(--accent)]"
-        />
-        <button
-          onClick={() => setShow((s) => !s)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
-          type="button"
-          aria-label="Toggle visibility"
-        >
-          {show ? <EyeOff size={18} /> : <Eye size={18} />}
-        </button>
-      </div>
+      {mode !== "forgot" && (
+        <>
+          <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-muted">
+            {mode === "signup" ? "Choose a password" : "PIN or password"}
+          </label>
+          <div className="relative mb-4">
+            <input
+              value={secret}
+              onChange={(e) => setSecret(e.target.value)}
+              type={show ? "text" : "password"}
+              inputMode="text"
+              placeholder={mode === "signup" ? "Choose a PIN or password" : "Your PIN or password"}
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              className="h-12 w-full rounded-xl border border-border bg-surface-2 px-4 pr-12 text-base outline-none focus:border-[var(--accent)]"
+            />
+            <button
+              onClick={() => setShow((s) => !s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+              type="button"
+              aria-label="Toggle visibility"
+            >
+              {show ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </>
+      )}
+
+      {mode === "forgot" && (
+        <p className="mb-4 text-sm text-muted">
+          Enter your username or email and we&apos;ll send a reset link to your email.
+        </p>
+      )}
 
       {mode === "signup" && (
         <div className="mb-4 -mt-2 rounded-xl bg-surface-2 p-3">
@@ -226,33 +266,53 @@ export function AuthForm({ joinCode }: { joinCode?: string }) {
         </div>
       )}
 
-      <label className="mb-5 flex cursor-pointer items-center gap-2 text-sm text-muted">
-        <input
-          type="checkbox"
-          checked={remember}
-          onChange={(e) => setRemember(e.target.checked)}
-          className="h-4 w-4 accent-[var(--accent)]"
-        />
-        Stay logged in on this device
-      </label>
+      {mode !== "forgot" && (
+        <label className="mb-5 flex cursor-pointer items-center gap-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+            className="h-4 w-4 accent-[var(--accent)]"
+          />
+          Stay logged in on this device
+        </label>
+      )}
 
       {error && <p className="mb-3 text-sm font-bold text-danger">{error}</p>}
+      {notice && <p className="mb-3 break-words text-sm font-semibold text-pitch">{notice}</p>}
 
       <Button
         variant="accent"
         size="lg"
         className="w-full"
-        disabled={pending || !name.trim() || !secret || tooShort}
+        disabled={
+          pending ||
+          !name.trim() ||
+          (mode !== "forgot" && (!secret || tooShort)) ||
+          (mode === "signup" && !email.trim())
+        }
         onClick={submit}
       >
-        {pending ? "…" : mode === "login" ? "Log in" : "Create account"}
+        {pending ? "…" : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Send reset link"}
       </Button>
 
       {mode === "login" && (
+        <div className="mt-3 flex flex-col items-center gap-1.5 text-center text-xs text-muted">
+          <button onClick={() => { setMode("forgot"); setError(null); setNotice(null); }} className="font-bold text-[var(--accent)]">
+            Forgot your PIN?
+          </button>
+          <span>
+            New here?{" "}
+            <button onClick={() => setMode("signup")} className="font-bold text-[var(--accent)]">
+              Create an account
+            </button>
+          </span>
+        </div>
+      )}
+      {mode === "forgot" && (
         <p className="mt-3 text-center text-xs text-muted">
-          New here?{" "}
-          <button onClick={() => setMode("signup")} className="font-bold text-[var(--accent)]">
-            Create an account
+          <button onClick={() => { setMode("login"); setError(null); setNotice(null); }} className="font-bold text-[var(--accent)]">
+            ← Back to login
           </button>
         </p>
       )}
