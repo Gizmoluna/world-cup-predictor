@@ -28,17 +28,26 @@ export function LeagueStandings({
   const ranked = [...rows].sort((a, b) => b.points - a.points || b.exactScores - a.exactScores);
   const anyScored = ranked.some((r) => r.played > 0);
 
+  const medal = (i: number) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null);
+
   return (
-    <div className="glass card-bc overflow-hidden">
-      <div className="flex items-center justify-between px-4 pt-3">
-        <h2 className="title-bc text-sm text-[var(--accent)]">{leagueName} · Table</h2>
-        <Link href="/leaderboard" className="text-[11px] font-bold text-[var(--accent)]">
+    <div className="glass card-bc overflow-hidden ring-1 ring-[var(--accent)]/40 accent-glow">
+      {/* Prominent header bar */}
+      <div className="flex items-center justify-between bg-[var(--accent-soft)] px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🏆</span>
+          <div>
+            <h2 className="title-bc text-lg leading-none">{leagueName}</h2>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted">League table</span>
+          </div>
+        </div>
+        <Link href="/leaderboard" className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-[11px] font-bold text-black">
           Full table →
         </Link>
       </div>
 
       {/* column headers */}
-      <div className="mt-2 grid grid-cols-[24px_1fr_auto] items-center gap-2 border-b border-border px-4 pb-1.5 text-[10px] font-bold uppercase tracking-wide text-muted">
+      <div className="grid grid-cols-[28px_1fr_auto] items-center gap-2 border-b border-border px-4 pb-1.5 pt-2 text-[10px] font-bold uppercase tracking-wide text-muted">
         <span>#</span>
         <span>Player</span>
         <span className="flex items-center gap-3">
@@ -53,17 +62,19 @@ export function LeagueStandings({
         {ranked.map((r, i) => {
           const rank = rankFor(r.points);
           const you = r.userId === currentUserId;
+          const lead = i === 0 && r.points > 0;
           return (
             <li key={r.userId}>
               <Link
                 href={`/profile/${r.userId}`}
                 className={cn(
-                  "grid grid-cols-[24px_1fr_auto] items-center gap-2 px-4 py-2.5 transition active:bg-white/5",
+                  "grid grid-cols-[28px_1fr_auto] items-center gap-2 px-4 py-3 transition active:bg-white/5",
+                  lead && "bg-gold/10",
                   you && "bg-[var(--accent-soft)]",
                 )}
               >
-                <span className={cn("num-bc text-center text-base", i === 0 ? "text-[var(--accent)]" : "text-muted")}>
-                  {i + 1}
+                <span className={cn("text-center", medal(i) ? "text-lg" : "num-bc text-base text-muted")}>
+                  {medal(i) ?? i + 1}
                 </span>
                 <span className="flex min-w-0 items-center gap-2">
                   <span className="text-lg">{r.flag}</span>
@@ -84,7 +95,7 @@ export function LeagueStandings({
                     {r.matchWins}-{r.matchDraws}-{r.matchLosses}
                   </span>
                   <span className="w-8 text-center text-pitch">{r.exactScores}</span>
-                  <span className="num-bc w-9 text-right text-base text-[var(--accent)]">{r.points}</span>
+                  <span className="num-bc w-9 text-right text-xl font-black text-[var(--accent)]">{r.points}</span>
                 </span>
               </Link>
             </li>
