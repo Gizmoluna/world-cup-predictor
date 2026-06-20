@@ -342,7 +342,10 @@ export default async function ProfilePage({
 
         {/* Trophy cabinet */}
         <Card className="flex flex-col gap-3">
-          <CardTitle>Trophy cabinet</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Trophy cabinet</CardTitle>
+            <Link href="/badges" className="text-xs font-bold text-[var(--accent)]">All badges →</Link>
+          </div>
           {uniqueBadges.length === 0 ? (
             <p className="rounded-xl bg-surface-2 p-4 text-center text-sm text-muted">
               No badges yet. Nail an exact score to start the collection. 🏆

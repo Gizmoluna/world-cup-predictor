@@ -22,6 +22,8 @@ import { getFriendIds } from "@/lib/friends";
 import { getBuyerRevealsForMatch, getSpyCountOnTarget, getSpyPot } from "@/lib/spy";
 import { spyFee } from "@/lib/money";
 import { getMatchDuels, resolveDuel } from "@/lib/duels";
+import { winProbability } from "@/lib/odds";
+import { WinProbability } from "@/components/win-probability";
 import { SpyButton } from "@/components/spy-button";
 import { MatchBets, type WagerRow, type DuelRow } from "@/components/match-bets";
 import { findDerbies, teamNameIndex } from "@/lib/derby";
@@ -190,6 +192,12 @@ export default async function MatchPage({
   }
   const canPlayPots = Boolean(league && members.length >= 2);
 
+  // Win probability (form model) — shown before kickoff to inform your pick.
+  // Knockout ties are at neutral venues, so drop the home edge there.
+  const homeStanding = model.standings.find((s) => s.teamId === match.homeTeamId);
+  const awayStanding = model.standings.find((s) => s.teamId === match.awayTeamId);
+  const winProb = winProbability(homeStanding, awayStanding, match.stage !== "group");
+
   // Bets riding on this match — solo wagers + head-to-head duels. Surfaced once
   // the match is locked (live or finished): live shows "in play", finished shows
   // who won and lost. Computed only when relevant to keep pre-kickoff light.
@@ -338,6 +346,9 @@ export default async function MatchPage({
               </p>
             </Card>
           )}
+          <div className="mb-4">
+            <WinProbability prob={winProb} homeName={home.shortName ?? home.name} awayName={away.shortName ?? away.name} />
+          </div>
           <div className="mb-4">
             <DuelChallenge matchId={id} friends={duelFriends} />
           </div>

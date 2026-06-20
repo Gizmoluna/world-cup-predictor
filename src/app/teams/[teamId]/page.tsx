@@ -119,10 +119,10 @@ export default async function TeamPage({ params }: { params: Promise<{ teamId: s
             <CardTitle>Goals</CardTitle>
             <div className="flex flex-col gap-1.5">
               {scorers.map((s) => (
-                <div key={s.playerId} className="flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm">
+                <Link key={s.playerId} href={`/players/${s.playerId}`} className="flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm transition active:scale-[0.99]">
                   <span className="font-bold">{s.name}</span>
                   <span className="num-bc font-black text-pitch">{s.goals}{s.penalties > 0 ? ` (${s.penalties}p)` : ""}</span>
-                </div>
+                </Link>
               ))}
             </div>
           </Card>

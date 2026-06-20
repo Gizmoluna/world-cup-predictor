@@ -84,7 +84,7 @@ export default async function InsightsPage() {
               {scorers.slice(0, 10).map((s, i) => (
                 <Link
                   key={s.playerId}
-                  href={s.teamId ? `/teams/${s.teamId}` : "/insights"}
+                  href={`/players/${s.playerId}`}
                   className="flex items-center gap-3 rounded-xl bg-surface-2 p-2.5 transition active:scale-[0.99]"
                 >
                   <span className="num-bc w-5 text-center text-sm text-muted">{i + 1}</span>
@@ -133,14 +133,14 @@ export default async function InsightsPage() {
           ) : (
             <div className="flex flex-col gap-2">
               {performers.map((p, i) => (
-                <div key={p.playerId} className="flex items-center gap-3 rounded-xl bg-surface-2 p-2.5">
+                <Link key={p.playerId} href={`/players/${p.playerId}`} className="flex items-center gap-3 rounded-xl bg-surface-2 p-2.5 transition active:scale-[0.99]">
                   <span className="num-bc w-5 text-center text-sm text-muted">{i + 1}</span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold">{p.name}</p>
                     <p className="text-[11px] text-muted">{p.teamName ?? "—"}</p>
                   </div>
                   <span className="text-sm font-bold text-gold">⭐ {p.awards}</span>
-                </div>
+                </Link>
               ))}
             </div>
           )}
