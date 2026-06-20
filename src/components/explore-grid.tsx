@@ -3,12 +3,12 @@ import Link from "next/link";
 // One-tap access from Home to every corner of the app, so the deeper pages
 // (insights, standings, friends, badges) aren't buried behind in-page links.
 const TILES = [
+  { href: "/live", icon: "🔴", label: "Live", sub: "Match centers" },
   { href: "/insights", icon: "📊", label: "Insights", sub: "Golden Boot, stats" },
   { href: "/standings", icon: "📋", label: "Standings", sub: "Group tables · teams" },
   { href: "/friends", icon: "🤝", label: "Friends", sub: "Picks & requests" },
   { href: "/badges", icon: "🏅", label: "Badges", sub: "Earn the collection" },
   { href: "/leaderboard", icon: "🏆", label: "Leaderboard", sub: "Who's on top" },
-  { href: "/how-it-works", icon: "📖", label: "How it works", sub: "Scoring & money" },
 ];
 
 export function ExploreGrid() {

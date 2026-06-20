@@ -126,6 +126,23 @@ export default async function DashboardPage() {
           {league && <p className="text-sm text-muted">{league.name}</p>}
         </div>
 
+        {hasLive && (
+          <Link
+            href="/live"
+            className="glass card-bc flex items-center gap-3 overflow-hidden border border-danger/40 bg-gradient-to-br from-danger/15 to-transparent p-4 transition active:scale-[0.99]"
+          >
+            <span className="relative flex h-3 w-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger opacity-75" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-danger" />
+            </span>
+            <div className="flex-1">
+              <p className="title-bc text-base">Matches are live now</p>
+              <p className="text-xs text-muted">Open the Live Center — see who&apos;s winning on points in real time.</p>
+            </div>
+            <ArrowRight className="text-danger" />
+          </Link>
+        )}
+
         {(user.id === "carina" || user.name?.toLowerCase() === "carina") && (
           <CarinaCharm lazy={need > 0} />
         )}

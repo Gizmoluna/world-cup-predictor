@@ -26,6 +26,8 @@ import { winProbability, asPercent } from "@/lib/odds";
 import { WinProbability } from "@/components/win-probability";
 import { SpyButton } from "@/components/spy-button";
 import { MatchBets, type WagerRow, type DuelRow } from "@/components/match-bets";
+import { liveStandings } from "@/lib/live";
+import { LiveMatchCenter, type LiveRow } from "@/components/live-match-center";
 import { findDerbies, teamNameIndex } from "@/lib/derby";
 import { DerbyBanner, type DerbyView } from "@/components/derby-banner";
 import { getUsers } from "@/lib/data";
@@ -198,6 +200,19 @@ export default async function MatchPage({
   const awayStanding = model.standings.find((s) => s.teamId === match.awayTeamId);
   const winProb = winProbability(homeStanding, awayStanding, match.stage !== "group");
 
+  // Live Match Center — provisional "who's winning this match" board, computed
+  // against the current score + events. Shown live, and on finished matches as
+  // the final board. (Aggregate only scores finished matches, so live needs its
+  // own pass here.)
+  let liveRows: LiveRow[] = [];
+  if (live || finished) {
+    const favBy = new Map<string, string | null>(members.map((m) => [m.id, m.favouriteTeamId ?? null]));
+    liveRows = liveStandings(match, events, preds, favBy).map((s) => {
+      const c = chrome(memberById.get(s.userId) ?? user);
+      return { userId: s.userId, name: c.name, flag: c.flag, points: s.score.totalPoints, hits: s.hits, you: s.userId === user.id };
+    });
+  }
+
   // Bets riding on this match — solo wagers + head-to-head duels. Surfaced once
   // the match is locked (live or finished): live shows "in play", finished shows
   // who won and lost. Computed only when relevant to keep pre-kickoff light.
@@ -310,6 +325,17 @@ export default async function MatchPage({
             }
           />
         </div>
+      )}
+
+      {liveRows.length > 0 && (
+        <LiveMatchCenter
+          rows={liveRows}
+          homeName={home.shortName ?? home.name}
+          awayName={away.shortName ?? away.name}
+          homeScore={match.homeScore ?? 0}
+          awayScore={match.awayScore ?? 0}
+          live={live}
+        />
       )}
 
       {(live || finished) && events.length > 0 && (
