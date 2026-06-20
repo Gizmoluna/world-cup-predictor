@@ -271,6 +271,16 @@ export default async function DashboardPage() {
           <ChevronRight size={16} className="text-[var(--accent)]" />
         </Link>
 
+        {/* ── Insights hub (Golden Boot, top performers, tournament pulse) ── */}
+        <Link
+          href="/insights"
+          className="glass flex items-center gap-3 p-3.5 transition active:scale-[0.99]"
+        >
+          <span className="text-xl">📊</span>
+          <span className="flex-1 text-sm font-bold">Golden Boot race, top performers &amp; tournament stats</span>
+          <ChevronRight size={16} className="text-[var(--accent)]" />
+        </Link>
+
         {/* ── News (compact) ─────────────────────────────────────────── */}
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between">

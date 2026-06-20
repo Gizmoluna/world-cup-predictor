@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Standing, Team } from "@/lib/types";
 import { TeamFlag } from "./team-flag";
 import { cn } from "@/lib/utils";
@@ -33,10 +34,11 @@ export function StandingsView({
               const mine = r.teamId === favouriteTeamId;
               const qualifies = i < 2;
               return (
-                <div
+                <Link
                   key={r.teamId}
+                  href={`/teams/${r.teamId}`}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2.5 text-sm",
+                    "flex items-center gap-2 px-3 py-2.5 text-sm transition active:scale-[0.99]",
                     qualifies && "border-l-2 border-pitch",
                     mine && "bg-[var(--accent-soft)]",
                   )}
@@ -54,7 +56,7 @@ export function StandingsView({
                     {r.goalDifference > 0 ? `+${r.goalDifference}` : r.goalDifference}
                   </span>
                   <span className="w-6 text-center text-base font-black tabular-nums">{r.points}</span>
-                </div>
+                </Link>
               );
             })}
           </div>
