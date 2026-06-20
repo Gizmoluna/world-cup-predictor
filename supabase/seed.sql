@@ -1,10 +1,11 @@
 -- Seed the two rivals + badge catalogue. Run after schema.sql.
 -- Teams/players/matches are populated by the app's /api/sync/fixtures job.
 
-insert into users (id, name, theme, nationality, flag) values
-  ('carina', 'Carina', 'gold', 'Colombia', '🇨🇴'),
-  ('johnny', 'Johnny', 'emerald', 'Ireland', '🍀')
-on conflict (id) do nothing;
+insert into users (id, name, theme, nationality, flag, email) values
+  ('carina', 'Carina', 'gold', 'Colombia', '🇨🇴', 'johnardara@gmail.com'),
+  ('johnny', 'Johnny', 'emerald', 'Ireland', '🍀', 'johnardara@gmail.com')
+-- Set the email even on existing rows (everything else is left untouched).
+on conflict (id) do update set email = excluded.email;
 
 -- The starter league everyone can join.
 insert into leagues (id, name, owner_id, invite_code) values
