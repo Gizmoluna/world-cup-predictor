@@ -18,20 +18,28 @@ export default async function PlayerPage({ params }: { params: Promise<{ playerI
   const provider = getProvider();
   const model = await getReadModel();
 
+  // Events across finished matches (used for goals + to identify live-feed
+  // players who aren't in any local roster).
+  const finished = model.matches.filter((m) => m.status === "full_time");
+  const events = (await Promise.all(finished.map((m) => provider.getMatchEvents(m.id)))).flat();
+  const scoring = topScorers(events, model.playerById, model.teamById).find((s) => s.playerId === playerId);
+
   let player = model.playerById.get(playerId);
-  // Player may not be in the read model's cache — try the team rosters.
+  // Not in the read model? Try the team rosters, then fall back to the player's
+  // own match events (live feeds name the scorer inline even without a roster).
   if (!player) {
     const fromApi = (await provider.getPlayers()).find((p) => p.id === playerId);
     if (fromApi) player = fromApi;
   }
+  if (!player) {
+    const ev = events.find((e) => e.playerId === playerId && (e.playerName || e.teamId));
+    if (ev?.playerName) {
+      player = { id: playerId, teamId: ev.teamId ?? "", name: ev.playerName };
+    }
+  }
   if (!player) notFound();
 
-  const team = model.teamById.get(player.teamId);
-
-  // This player's goals across finished matches.
-  const finished = model.matches.filter((m) => m.status === "full_time");
-  const events = (await Promise.all(finished.map((m) => provider.getMatchEvents(m.id)))).flat();
-  const scoring = topScorers(events, model.playerById, model.teamById).find((s) => s.playerId === playerId);
+  const team = player.teamId ? model.teamById.get(player.teamId) : undefined;
   const goals = scoring?.goals ?? 0;
 
   // Who in your league is tied to this player (Golden Boot pick, favourite, or

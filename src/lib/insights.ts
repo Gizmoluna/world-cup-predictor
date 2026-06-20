@@ -35,7 +35,7 @@ export function topScorers(
       by.get(e.playerId) ??
       {
         playerId: e.playerId,
-        name: p?.name ?? "Unknown",
+        name: p?.name ?? e.playerName ?? "Unknown",
         teamId: e.teamId ?? null,
         teamName: team?.shortName ?? team?.name ?? null,
         teamFlagUrl: team?.flagUrl ?? null,
@@ -70,7 +70,7 @@ export function topPerformers(
     const team = e.teamId ? teamById.get(e.teamId) : undefined;
     const row = by.get(e.playerId) ?? {
       playerId: e.playerId,
-      name: p?.name ?? "Unknown",
+      name: p?.name ?? e.playerName ?? "Unknown",
       teamName: team?.shortName ?? team?.name ?? null,
       awards: 0,
     };

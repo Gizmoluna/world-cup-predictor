@@ -122,7 +122,9 @@ export class EspnProvider implements FootballProvider {
         type,
         teamId: e?.team?.id ? String(e.team.id) : null,
         playerId: scorer?.id ? String(scorer.id) : null,
+        playerName: scorer?.displayName ?? scorer?.shortName ?? null,
         assistPlayerId: assist?.id ? String(assist.id) : null,
+        assistPlayerName: assist?.displayName ?? assist?.shortName ?? null,
         description: e?.type?.text ?? null,
       });
     });

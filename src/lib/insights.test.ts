@@ -34,6 +34,15 @@ describe("topScorers (Golden Boot)", () => {
     const s = topScorers(events.filter((e) => e.type === "yellow_card"), playerById, teamById);
     expect(s).toEqual([]);
   });
+
+  it("falls back to the event's player name when not in any roster (live feeds)", () => {
+    // A scorer whose id isn't in playerById — name must come off the event.
+    const liveEvents = [
+      { id: "x", matchId: "m9", minute: 5, type: "goal" as const, teamId: "arg", playerId: "espn_99", playerName: "Lautaro" },
+    ];
+    const s = topScorers(liveEvents, playerById, teamById);
+    expect(s[0]).toMatchObject({ playerId: "espn_99", name: "Lautaro", goals: 1, teamName: "ARG" });
+  });
 });
 
 describe("topPerformers (Player of the Match)", () => {

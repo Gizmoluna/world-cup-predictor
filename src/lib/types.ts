@@ -58,7 +58,11 @@ export interface MatchEvent {
   type: MatchEventType;
   teamId: string | null;
   playerId: string | null;
+  /** Display name of the player, carried on the event so scorer lists don't
+   *  depend on a separate roster lookup (live feeds give the name inline). */
+  playerName?: string | null;
   assistPlayerId?: string | null;
+  assistPlayerName?: string | null;
   description?: string | null;
 }
 
