@@ -17,6 +17,9 @@ interface Props {
   awayPlayers: Player[];
   userId: string;
   existing: Prediction | null;
+  /** Form-model win chance for each side (whole %), for the underdog nudge. */
+  homeWinPct?: number;
+  awayWinPct?: number;
 }
 
 const isKnockout = (m: Match) => m.stage !== "group";
@@ -29,6 +32,8 @@ export function PredictionForm({
   awayPlayers,
   userId,
   existing,
+  homeWinPct,
+  awayWinPct,
 }: Props) {
   const [p, setP] = useState<Prediction>(
     existing ?? {
@@ -42,6 +47,31 @@ export function PredictionForm({
   );
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Who is this prediction backing? Explicit winner pick, else derived from the
+  // scoreline. Used to spot when you're backing the underdog → upset bonus.
+  const backed: "home" | "away" | "draw" | null =
+    p.predictedWinnerTeamId === home.id
+      ? "home"
+      : p.predictedWinnerTeamId === away.id
+        ? "away"
+        : p.predictedWinnerTeamId === null && p.predictedHomeScore != null && p.predictedAwayScore != null
+          ? p.predictedHomeScore > p.predictedAwayScore
+            ? "home"
+            : p.predictedHomeScore < p.predictedAwayScore
+              ? "away"
+              : "draw"
+          : null;
+  const haveOdds = homeWinPct != null && awayWinPct != null;
+  const backedPct = backed === "home" ? homeWinPct : backed === "away" ? awayWinPct : undefined;
+  // Underdog = backing a decisive side the model gives < 33% and that's the
+  // lower-rated of the two.
+  const backingUnderdog =
+    haveOdds &&
+    (backed === "home" || backed === "away") &&
+    (backedPct ?? 100) < 33 &&
+    (backed === "home" ? homeWinPct! < awayWinPct! : awayWinPct! < homeWinPct!);
+  const underdogName = backed === "home" ? home.shortName ?? home.name : away.shortName ?? away.name;
 
   // Players with their country flag, for the picker (sorted by scoring odds).
   const pickerPlayers = [...homePlayers, ...awayPlayers].map((pl) => ({
@@ -253,6 +283,19 @@ export function PredictionForm({
       </Section>
 
       <Section title="Upset alert 💣" hint="bonus if your underdog wins">
+        {backingUnderdog && (
+          <button
+            type="button"
+            onClick={() => set({ upsetAlert: true })}
+            className="mb-2 w-full rounded-xl bg-gold/15 p-3 text-left text-xs transition active:scale-[0.99]"
+          >
+            <span className="font-black text-gold">🔥 You&apos;re backing the underdog!</span>{" "}
+            <span className="text-muted">
+              The model gives {underdogName} just <span className="font-bold text-fg">{backedPct}%</span>.
+              {p.upsetAlert ? " Upset flagged — +3 if they win." : " Tap to flag the upset for +3 if it lands."}
+            </span>
+          </button>
+        )}
         <YesNo value={p.upsetAlert ?? null} onChange={(v) => set({ upsetAlert: v })} />
       </Section>
 

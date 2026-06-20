@@ -15,6 +15,7 @@ import { StreakBadge } from "@/components/streak-badge";
 import { CelebrateProgress } from "@/components/celebrate-progress";
 import { LiveRefresher } from "@/components/live-refresher";
 import { CarinaCharm } from "@/components/carina-charm";
+import { ExploreGrid } from "@/components/explore-grid";
 import { Card, CardTitle } from "@/components/ui/card";
 import { computeAchievements } from "@/lib/achievements";
 import { rankProgress } from "@/lib/constants";
@@ -271,15 +272,8 @@ export default async function DashboardPage() {
           <ChevronRight size={16} className="text-[var(--accent)]" />
         </Link>
 
-        {/* ── Insights hub (Golden Boot, top performers, tournament pulse) ── */}
-        <Link
-          href="/insights"
-          className="glass flex items-center gap-3 p-3.5 transition active:scale-[0.99]"
-        >
-          <span className="text-xl">📊</span>
-          <span className="flex-1 text-sm font-bold">Golden Boot race, top performers &amp; tournament stats</span>
-          <ChevronRight size={16} className="text-[var(--accent)]" />
-        </Link>
+        {/* ── Explore everything (one tap to every section) ──────────── */}
+        <ExploreGrid />
 
         {/* ── News (compact) ─────────────────────────────────────────── */}
         <section className="flex flex-col gap-2">

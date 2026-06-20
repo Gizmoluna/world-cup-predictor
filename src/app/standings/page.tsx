@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/session";
 import { getProvider } from "@/lib/football-api/provider";
 import { AppShell } from "@/components/app-shell";
 import { StandingsView } from "@/components/standings-view";
+import { SectionNav } from "@/components/section-nav";
 import type { Standing, Team } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -49,9 +50,10 @@ export default async function StandingsPage() {
           <Medal size={14} /> Predict winners
         </Link>
       </div>
-      <p className="mb-4 text-sm text-muted">
-        {ordered.length ? "Live tables · top 2 advance" : "Standings will appear once the group stage is under way."}
+      <p className="mb-3 text-sm text-muted">
+        {ordered.length ? "Live tables · top 2 advance · tap a team for its page" : "Standings will appear once the group stage is under way."}
       </p>
+      <SectionNav active="/standings" />
       <StandingsView
         groups={ordered.map(([name, rows]) => ({ name, rows }))}
         teamById={teamById}

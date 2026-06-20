@@ -22,7 +22,7 @@ import { getFriendIds } from "@/lib/friends";
 import { getBuyerRevealsForMatch, getSpyCountOnTarget, getSpyPot } from "@/lib/spy";
 import { spyFee } from "@/lib/money";
 import { getMatchDuels, resolveDuel } from "@/lib/duels";
-import { winProbability } from "@/lib/odds";
+import { winProbability, asPercent } from "@/lib/odds";
 import { WinProbability } from "@/components/win-probability";
 import { SpyButton } from "@/components/spy-button";
 import { MatchBets, type WagerRow, type DuelRow } from "@/components/match-bets";
@@ -360,6 +360,8 @@ export default async function MatchPage({
             awayPlayers={awayPlayers}
             userId={user.id}
             existing={myPred}
+            homeWinPct={asPercent(winProb).home}
+            awayWinPct={asPercent(winProb).away}
           />
 
           {/* Rivals' picks stay hidden until kickoff. Pay the fee (into the Spy

@@ -5,6 +5,7 @@ import { getProvider } from "@/lib/football-api/provider";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardTitle } from "@/components/ui/card";
 import { topScorers, topPerformers, tournamentTotals, type ScorerRow } from "@/lib/insights";
+import { SectionNav } from "@/components/section-nav";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -53,10 +54,8 @@ export default async function InsightsPage() {
 
   return (
     <AppShell>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="title-bc text-3xl">Insights</h1>
-        <Link href="/standings" className="text-xs font-bold text-[var(--accent)]">Standings →</Link>
-      </div>
+      <h1 className="title-bc mb-3 text-3xl">Insights</h1>
+      <SectionNav active="/insights" />
 
       <div className="flex flex-col gap-5">
         {/* Tournament pulse */}
