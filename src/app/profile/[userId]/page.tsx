@@ -172,9 +172,17 @@ export default async function ProfilePage({
                 <Badge tone="default">⭐ {user.favouriteCountry}</Badge>
               )}
             </div>
-            <div className="mt-1.5 flex items-center gap-2">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <Badge tone="accent">{friends.length} friend{friends.length === 1 ? "" : "s"}</Badge>
               {viewer && !isSelf && <FriendButton targetId={user.id} state={state} />}
+              {viewer && !isSelf && (
+                <Link
+                  href={`/versus/${user.id}`}
+                  className="flex items-center gap-1.5 rounded-xl bg-[var(--accent-soft)] px-3 py-2 text-sm font-bold text-[var(--accent)] transition active:scale-95"
+                >
+                  ⚔️ Head-to-head
+                </Link>
+              )}
             </div>
           </div>
         </div>

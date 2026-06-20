@@ -169,6 +169,24 @@ export default async function DashboardPage() {
           </Link>
         )}
 
+        {league && members.length === 2 && (() => {
+          const rival = members.find((m) => m.id !== user.id);
+          if (!rival) return null;
+          return (
+            <Link
+              href={`/versus/${rival.id}`}
+              className="glass card-bc flex items-center gap-3 p-4 transition active:scale-[0.99]"
+            >
+              <span className="text-2xl">⚔️</span>
+              <div className="flex-1">
+                <p className="title-bc text-base">You vs {rival.name}</p>
+                <p className="text-xs text-muted">Every match, side by side — see who&apos;s winning the duel.</p>
+              </div>
+              <ChevronRight size={16} className="text-[var(--accent)]" />
+            </Link>
+          );
+        })()}
+
         {!league && (
           <Link href="/leagues" className="glass block p-4 ring-1 ring-[var(--accent)]/50 transition active:scale-[0.99]">
             <p className="text-sm font-bold">You&apos;re not in a league yet 🏆</p>
